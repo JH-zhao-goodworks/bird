@@ -8,9 +8,13 @@ C# WinForms（.NET 10）で作成した、ローカルPCで動く小鳥ホテル
 実行ファイル名はOSやツールでの文字化けを避けるため英数字（`BirdHotelReservation.exe`）にしています。
 ウィンドウ内の表示（タイトルバーや画面）はすべて日本語です。
 
+実行ファイルはリポジトリには含めず、GitHubの **[Releases](https://github.com/JH-zhao-goodworks/bird/releases)** に添付しています。
+そこから `BirdHotelReservation-vX.Y.Z.exe`（自己完結型）または `BirdHotelReservation-vX.Y.Z-framework-dependent.zip`（軽量版）をダウンロードしてください。
+自分でビルドする場合は、下の「開発者向け情報」の publish コマンドを実行すると同じものが作られます。
+
 配布形式は2種類用意しています。
 
-1. **`BirdHotel.App/publish-framework-dependent/`（推奨・まずこちらを試してください）**
+1. **フレームワーク依存版（軽量・推奨。`publish-framework-dependent`）**
    このPCに既に入っている .NET 10 デスクトップランタイムを使って動く軽量版です。
    - `BirdHotelReservation.exe` を直接ダブルクリック、または
    - 同じフォルダの **`起動.bat`** をダブルクリック（`dotnet.exe`経由で起動するため、未署名exeの直接実行がブロックされる環境ではこちらの方が動く可能性があります）

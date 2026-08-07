@@ -1,0 +1,12 @@
+# ビルド成果物（配布用exeはGitHubのReleasesに添付する）
+bin/
+obj/
+publish/
+publish-framework-dependent/
+release/
+
+# Visual Studio / Rider などの作業ファイル
+.vs/
+.idea/
+*.user
+*.suo
