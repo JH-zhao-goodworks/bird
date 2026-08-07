@@ -14,6 +14,8 @@ public class Reservation
     // 表示用（DBには保存しない、一覧表示のために結合結果を保持する）
     public string BirdName { get; set; } = "";
     public string CageName { get; set; } = "";
+    public int? OwnerId { get; set; }
+    public string OwnerName { get; set; } = "";
 
     public bool IsIndefinite => EndDate is null;
 

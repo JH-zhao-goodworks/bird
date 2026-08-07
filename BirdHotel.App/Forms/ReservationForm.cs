@@ -139,8 +139,13 @@ public class ReservationForm : Form
         // ---- 右側: 予約一覧 ----
         var rightPanel = new Panel { Dock = DockStyle.Fill, Padding = new Padding(12) };
         var rightLabel = new Label { Text = "予約一覧", Dock = DockStyle.Top, Height = 24, Font = new Font("Yu Gothic UI", 11F, FontStyle.Bold) };
-        var deleteButton = new Button { Text = "選択した予約を取消", Dock = DockStyle.Bottom, Height = 36 };
+        var reservationButtonPanel = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = 40, FlowDirection = FlowDirection.LeftToRight };
+        var editReservationButton = new Button { Text = "編集", Width = 100, Height = 32 };
+        editReservationButton.Click += (_, _) => EditSelectedReservation();
+        var deleteButton = new Button { Text = "選択した予約を取消", Width = 150, Height = 32 };
         deleteButton.Click += (_, _) => DeleteSelectedReservation();
+        reservationButtonPanel.Controls.Add(editReservationButton);
+        reservationButtonPanel.Controls.Add(deleteButton);
 
         _reservationGrid = new DataGridView
         {
@@ -160,12 +165,13 @@ public class ReservationForm : Form
         _reservationGrid.Columns.Add("Notes", "備考");
         foreach (DataGridViewColumn col in _reservationGrid.Columns)
             col.SortMode = DataGridViewColumnSortMode.NotSortable; // 行の並びと_reservationsの添字を一致させ続けるため
+        _reservationGrid.CellDoubleClick += (_, e) => { if (e.RowIndex >= 0) EditSelectedReservation(); };
 
         rightPanel.Controls.Add(_reservationGrid);
-        rightPanel.Controls.Add(deleteButton);
+        rightPanel.Controls.Add(reservationButtonPanel);
         rightPanel.Controls.Add(rightLabel);
         rightPanel.Controls.SetChildIndex(_reservationGrid, 0);
-        rightPanel.Controls.SetChildIndex(deleteButton, 1);
+        rightPanel.Controls.SetChildIndex(reservationButtonPanel, 1);
         rightPanel.Controls.SetChildIndex(rightLabel, 2);
 
         split.Panel2.Controls.Add(rightPanel);
@@ -304,12 +310,31 @@ public class ReservationForm : Form
         }
     }
 
+    private void EditSelectedReservation()
+    {
+        var reservation = GetSelectedReservation();
+        if (reservation is null) return;
+
+        using var editForm = new ReservationEditForm(reservation, _cageRepository, _reservationRepository);
+        if (editForm.ShowDialog(this) == DialogResult.OK)
+        {
+            _reservationRepository.Update(editForm.EditedReservation);
+            RefreshReservationGrid();
+            SearchAvailability();
+        }
+    }
+
+    private Reservation? GetSelectedReservation()
+    {
+        if (_reservationGrid.SelectedRows.Count == 0) return null;
+        var index = _reservationGrid.SelectedRows[0].Index;
+        return index >= 0 && index < _reservations.Count ? _reservations[index] : null;
+    }
+
     private void DeleteSelectedReservation()
     {
-        if (_reservationGrid.SelectedRows.Count == 0) return;
-        var index = _reservationGrid.SelectedRows[0].Index;
-        if (index < 0 || index >= _reservations.Count) return;
-        var reservation = _reservations[index];
+        var reservation = GetSelectedReservation();
+        if (reservation is null) return;
 
         var confirm = MessageBox.Show($"「{reservation.BirdName}」の予約（{reservation.CageName}）を取り消しますか？", "確認",
             MessageBoxButtons.YesNo, MessageBoxIcon.Warning);

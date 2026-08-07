@@ -33,9 +33,17 @@ public class OwnerListForm : Form
         editButton.Click += (_, _) => EditSelectedOwner();
         var deleteButton = new Button { Text = "削除", Width = 100, Height = 32 };
         deleteButton.Click += (_, _) => DeleteSelectedOwner();
+        var mergeButton = new Button { Text = "重複を統合", Width = 100, Height = 32, Margin = new Padding(20, 3, 3, 3) };
+        mergeButton.Click += (_, _) =>
+        {
+            using var mergeForm = new OwnerMergeForm(_ownerRepository, _birdRepository);
+            mergeForm.ShowDialog(this);
+            RefreshGrid();
+        };
         topPanel.Controls.Add(addButton);
         topPanel.Controls.Add(editButton);
         topPanel.Controls.Add(deleteButton);
+        topPanel.Controls.Add(mergeButton);
 
         _grid = new DataGridView
         {

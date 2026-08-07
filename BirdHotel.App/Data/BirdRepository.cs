@@ -11,7 +11,7 @@ public class BirdRepository
 
     private const string BaseSelect = """
         SELECT b.Id, b.Species, b.Name, b.BirthDate, b.Size, b.Gender, b.OwnerId, b.Notes,
-               IFNULL(o.Name, ''), IFNULL(o.IsProprietor, 0)
+               IFNULL(o.Name, ''), IFNULL(o.IsProprietor, 0), b.CanPair, IFNULL(b.PairName, '')
         FROM Birds b
         LEFT JOIN Owners o ON o.Id = b.OwnerId
         """;
@@ -56,8 +56,8 @@ public class BirdRepository
         using var connection = _db.OpenConnection();
         using var cmd = connection.CreateCommand();
         cmd.CommandText = """
-            INSERT INTO Birds (Species, Name, BirthDate, Size, Gender, OwnerId, Notes)
-            VALUES ($species, $name, $birthDate, $size, $gender, $ownerId, $notes);
+            INSERT INTO Birds (Species, Name, BirthDate, Size, Gender, OwnerId, CanPair, PairName, Notes)
+            VALUES ($species, $name, $birthDate, $size, $gender, $ownerId, $canPair, $pairName, $notes);
             SELECT last_insert_rowid();
             """;
         AddParams(cmd, bird);
@@ -71,7 +71,7 @@ public class BirdRepository
         cmd.CommandText = """
             UPDATE Birds SET
                 Species = $species, Name = $name, BirthDate = $birthDate, Size = $size,
-                Gender = $gender, OwnerId = $ownerId, Notes = $notes
+                Gender = $gender, OwnerId = $ownerId, CanPair = $canPair, PairName = $pairName, Notes = $notes
             WHERE Id = $id;
             """;
         AddParams(cmd, bird);
@@ -96,6 +96,8 @@ public class BirdRepository
         cmd.Parameters.AddWithValue("$size", bird.Size.ToString());
         cmd.Parameters.AddWithValue("$gender", bird.Gender.ToString());
         cmd.Parameters.AddWithValue("$ownerId", (object?)bird.OwnerId ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("$canPair", bird.CanPair ? 1 : 0);
+        cmd.Parameters.AddWithValue("$pairName", (object?)bird.PairName ?? DBNull.Value);
         cmd.Parameters.AddWithValue("$notes", (object?)bird.Notes ?? DBNull.Value);
     }
 
@@ -111,5 +113,7 @@ public class BirdRepository
         Notes = reader.IsDBNull(7) ? "" : reader.GetString(7),
         OwnerName = reader.GetString(8),
         IsProprietorBird = reader.GetInt32(9) != 0,
+        CanPair = reader.GetInt32(10) != 0,
+        PairName = reader.GetString(11),
     };
 }

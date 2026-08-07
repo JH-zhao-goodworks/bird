@@ -22,6 +22,10 @@ public class Bird
     public BirdSize Size { get; set; } = BirdSize.中小型;
     public BirdGender Gender { get; set; } = BirdGender.不明;
     public int? OwnerId { get; set; }
+
+    // 他の鳥と同じ籠に入れてよいか（ペア可）と、そのペア（同居グループ）の名前
+    public bool CanPair { get; set; }
+    public string PairName { get; set; } = "";
     public string Notes { get; set; } = "";
 
     // 表示用（DBには保存しない、Ownersテーブルとの結合結果を保持する）

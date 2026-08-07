@@ -51,3 +51,4 @@ C:\Users\趙矜涵（ZHAOJinhan）\Documents\BirdHotelReservation\BirdHotel.App\
 C:\Users\趙矜涵（ZHAOJinhan）\Documents\BirdHotelReservation\BirdHotel.App\obj\Debug\net10.0-windows\BirdHotel.App.Forms.BirdListForm.resources
 C:\Users\趙矜涵（ZHAOJinhan）\Documents\BirdHotelReservation\BirdHotel.App\obj\Debug\net10.0-windows\BirdHotel.App.Forms.CageEditForm.resources
 C:\Users\趙矜涵（ZHAOJinhan）\Documents\BirdHotelReservation\BirdHotel.App\obj\Debug\net10.0-windows\BirdHotel.App.csproj.GenerateResource.cache
+C:\Users\趙矜涵（ZHAOJinhan）\Documents\BirdHotelReservation\BirdHotel.App\obj\Debug\net10.0-windows\BirdHotel.App.sourcelink.json

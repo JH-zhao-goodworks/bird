@@ -48,6 +48,7 @@ public class CageListForm : Form
         };
         _grid.Columns.Add("Name", "籠名");
         _grid.Columns.Add("Capacity", "定員（既定2、特別時は変更可）");
+        _grid.Columns.Add("Type", "種別");
         _grid.Columns.Add("Notes", "備考");
         foreach (DataGridViewColumn col in _grid.Columns)
             col.SortMode = DataGridViewColumnSortMode.NotSortable; // 行の並びとリストの添字を一致させ続けるため
@@ -62,7 +63,7 @@ public class CageListForm : Form
         _cages = _cageRepository.GetAll();
         _grid.Rows.Clear();
         foreach (var cage in _cages)
-            _grid.Rows.Add(cage.Name, cage.Capacity, cage.Notes);
+            _grid.Rows.Add(cage.Name, cage.Capacity, cage.Type.ToString(), cage.Notes);
     }
 
     private void AddCage()

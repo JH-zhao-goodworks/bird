@@ -54,13 +54,21 @@ public class DatabaseService
                     Size TEXT NOT NULL,
                     Gender TEXT NOT NULL,
                     OwnerId INTEGER NULL REFERENCES Owners(Id),
+                    CanPair INTEGER NOT NULL DEFAULT 0,
+                    PairName TEXT NULL,
                     Notes TEXT NULL
+                );
+
+                CREATE TABLE IF NOT EXISTS Species (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    Name TEXT NOT NULL UNIQUE
                 );
 
                 CREATE TABLE IF NOT EXISTS Cages (
                     Id INTEGER PRIMARY KEY AUTOINCREMENT,
                     Name TEXT NOT NULL,
                     Capacity INTEGER NOT NULL DEFAULT 2,
+                    CageType TEXT NOT NULL DEFAULT '通常籠',
                     Notes TEXT NULL
                 );
 
@@ -77,20 +85,83 @@ public class DatabaseService
         }
 
         MigrateLegacyOwnerColumns(connection);
+        AddMissingBirdColumns(connection);
+        SeedAndMigrateSpecies(connection);
+    }
+
+    // 後から追加した項目（鳥のペア可否・ペア名、籠の種別）を、既存のデータベースにも足す。
+    private static void AddMissingBirdColumns(SqliteConnection connection)
+    {
+        var birdColumns = GetColumnNames(connection, "Birds");
+
+        if (!birdColumns.Contains("CanPair"))
+        {
+            using var cmd = connection.CreateCommand();
+            cmd.CommandText = "ALTER TABLE Birds ADD COLUMN CanPair INTEGER NOT NULL DEFAULT 0;";
+            cmd.ExecuteNonQuery();
+        }
+
+        if (!birdColumns.Contains("PairName"))
+        {
+            using var cmd = connection.CreateCommand();
+            cmd.CommandText = "ALTER TABLE Birds ADD COLUMN PairName TEXT NULL;";
+            cmd.ExecuteNonQuery();
+        }
+
+        var cageColumns = GetColumnNames(connection, "Cages");
+        if (!cageColumns.Contains("CageType"))
+        {
+            using var cmd = connection.CreateCommand();
+            cmd.CommandText = "ALTER TABLE Cages ADD COLUMN CageType TEXT NOT NULL DEFAULT '通常籠';";
+            cmd.ExecuteNonQuery();
+        }
+    }
+
+    private static HashSet<string> GetColumnNames(SqliteConnection connection, string tableName)
+    {
+        var columns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        using var cmd = connection.CreateCommand();
+        cmd.CommandText = $"PRAGMA table_info({tableName});";
+        using var reader = cmd.ExecuteReader();
+        while (reader.Read())
+            columns.Add(reader.GetString(1));
+        return columns;
+    }
+
+    private static readonly string[] DefaultSpecies =
+    [
+        "セキセイインコ", "オカメインコ", "コザクラインコ", "ボタンインコ",
+        "サザナミインコ", "マメルリハ", "オキナインコ", "ヨウム", "ウロコインコ",
+    ];
+
+    // 種類マスタに初期候補を投入し、既に鳥に入力済みの種類（自由入力だった頃のデータ）も
+    // プルダウンの選択肢として使えるよう取り込む。
+    private static void SeedAndMigrateSpecies(SqliteConnection connection)
+    {
+        using (var cmd = connection.CreateCommand())
+        {
+            cmd.CommandText = "INSERT OR IGNORE INTO Species (Name) VALUES " +
+                string.Join(", ", DefaultSpecies.Select((_, i) => $"($species{i})")) + ";";
+            for (var i = 0; i < DefaultSpecies.Length; i++)
+                cmd.Parameters.AddWithValue($"$species{i}", DefaultSpecies[i]);
+            cmd.ExecuteNonQuery();
+        }
+
+        using (var cmd = connection.CreateCommand())
+        {
+            cmd.CommandText = """
+                INSERT OR IGNORE INTO Species (Name)
+                SELECT DISTINCT TRIM(Species) FROM Birds WHERE TRIM(COALESCE(Species, '')) <> '';
+                """;
+            cmd.ExecuteNonQuery();
+        }
     }
 
     // 旧バージョン（飼い主を Birds.OwnerName/OwnerContact/IsOwnerBird に直接保持していた頃）の
     // データベースから、Owners テーブルを使う新しいスキーマへ既存データを保ったまま移行する。
     private static void MigrateLegacyOwnerColumns(SqliteConnection connection)
     {
-        var birdColumns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        using (var cmd = connection.CreateCommand())
-        {
-            cmd.CommandText = "PRAGMA table_info(Birds);";
-            using var reader = cmd.ExecuteReader();
-            while (reader.Read())
-                birdColumns.Add(reader.GetString(1));
-        }
+        var birdColumns = GetColumnNames(connection, "Birds");
 
         if (!birdColumns.Contains("OwnerId"))
         {

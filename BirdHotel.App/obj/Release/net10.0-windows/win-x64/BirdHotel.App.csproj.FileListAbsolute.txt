@@ -22,6 +22,7 @@ C:\Users\趙矜涵（ZHAOJinhan）\Documents\BirdHotelReservation\BirdHotel.App\
 C:\Users\趙矜涵（ZHAOJinhan）\Documents\BirdHotelReservation\BirdHotel.App\obj\Release\net10.0-windows\win-x64\BirdHotel.App.Forms.BirdListForm.resources
 C:\Users\趙矜涵（ZHAOJinhan）\Documents\BirdHotelReservation\BirdHotel.App\obj\Release\net10.0-windows\win-x64\BirdHotel.App.Forms.CageEditForm.resources
 C:\Users\趙矜涵（ZHAOJinhan）\Documents\BirdHotelReservation\BirdHotel.App\obj\Release\net10.0-windows\win-x64\BirdHotel.App.csproj.GenerateResource.cache
+C:\Users\趙矜涵（ZHAOJinhan）\Documents\BirdHotelReservation\BirdHotel.App\obj\Release\net10.0-windows\win-x64\BirdHotel.App.sourcelink.json
 C:\Users\趙矜涵（ZHAOJinhan）\Documents\BirdHotelReservation\BirdHotel.App\bin\Release\net10.0-windows\win-x64\Microsoft.CSharp.dll
 C:\Users\趙矜涵（ZHAOJinhan）\Documents\BirdHotelReservation\BirdHotel.App\bin\Release\net10.0-windows\win-x64\Microsoft.VisualBasic.Core.dll
 C:\Users\趙矜涵（ZHAOJinhan）\Documents\BirdHotelReservation\BirdHotel.App\bin\Release\net10.0-windows\win-x64\Microsoft.Win32.Primitives.dll

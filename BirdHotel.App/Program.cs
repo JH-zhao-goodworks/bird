@@ -12,10 +12,11 @@ static class Program
 
         var db = new DatabaseService();
         var ownerRepository = new OwnerRepository(db);
+        var speciesRepository = new SpeciesRepository(db);
         var birdRepository = new BirdRepository(db);
         var cageRepository = new CageRepository(db);
         var reservationRepository = new ReservationRepository(db);
 
-        Application.Run(new MainForm(birdRepository, cageRepository, reservationRepository, ownerRepository));
+        Application.Run(new MainForm(birdRepository, cageRepository, reservationRepository, ownerRepository, speciesRepository));
     }
 }

@@ -13,19 +13,47 @@ public class CageRepository
     {
         using var connection = _db.OpenConnection();
         using var cmd = connection.CreateCommand();
-        cmd.CommandText = "SELECT Id, Name, Capacity, Notes FROM Cages ORDER BY Id;";
+        cmd.CommandText = "SELECT Id, Name, Capacity, CageType, Notes FROM Cages;";
         using var reader = cmd.ExecuteReader();
         var result = new List<Cage>();
         while (reader.Read())
             result.Add(Map(reader));
+        result.Sort((a, b) => CompareNatural(a.Name, b.Name));
         return result;
+    }
+
+    // 「2」が「10」より前に来るように、名前に含まれる数字を数値として比較する自然順ソート
+    public static int CompareNatural(string a, string b)
+    {
+        int i = 0, j = 0;
+        while (i < a.Length && j < b.Length)
+        {
+            if (char.IsDigit(a[i]) && char.IsDigit(b[j]))
+            {
+                int startI = i, startJ = j;
+                while (i < a.Length && char.IsDigit(a[i])) i++;
+                while (j < b.Length && char.IsDigit(b[j])) j++;
+                var numA = a[startI..i].TrimStart('0');
+                var numB = b[startJ..j].TrimStart('0');
+                if (numA.Length != numB.Length) return numA.Length - numB.Length;
+                var numCompare = string.CompareOrdinal(numA, numB);
+                if (numCompare != 0) return numCompare;
+            }
+            else
+            {
+                var charCompare = a[i].CompareTo(b[j]);
+                if (charCompare != 0) return charCompare;
+                i++; j++;
+            }
+        }
+        return (a.Length - i) - (b.Length - j);
     }
 
     public Cage? GetById(int id)
     {
         using var connection = _db.OpenConnection();
         using var cmd = connection.CreateCommand();
-        cmd.CommandText = "SELECT Id, Name, Capacity, Notes FROM Cages WHERE Id = $id;";
+        cmd.CommandText = "SELECT Id, Name, Capacity, CageType, Notes FROM Cages WHERE Id = $id;";
         cmd.Parameters.AddWithValue("$id", id);
         using var reader = cmd.ExecuteReader();
         return reader.Read() ? Map(reader) : null;
@@ -36,7 +64,7 @@ public class CageRepository
         using var connection = _db.OpenConnection();
         using var cmd = connection.CreateCommand();
         cmd.CommandText = """
-            INSERT INTO Cages (Name, Capacity, Notes) VALUES ($name, $capacity, $notes);
+            INSERT INTO Cages (Name, Capacity, CageType, Notes) VALUES ($name, $capacity, $cageType, $notes);
             SELECT last_insert_rowid();
             """;
         AddParams(cmd, cage);
@@ -47,7 +75,7 @@ public class CageRepository
     {
         using var connection = _db.OpenConnection();
         using var cmd = connection.CreateCommand();
-        cmd.CommandText = "UPDATE Cages SET Name = $name, Capacity = $capacity, Notes = $notes WHERE Id = $id;";
+        cmd.CommandText = "UPDATE Cages SET Name = $name, Capacity = $capacity, CageType = $cageType, Notes = $notes WHERE Id = $id;";
         AddParams(cmd, cage);
         cmd.Parameters.AddWithValue("$id", cage.Id);
         cmd.ExecuteNonQuery();
@@ -66,6 +94,7 @@ public class CageRepository
     {
         cmd.Parameters.AddWithValue("$name", cage.Name);
         cmd.Parameters.AddWithValue("$capacity", cage.Capacity);
+        cmd.Parameters.AddWithValue("$cageType", cage.Type.ToString());
         cmd.Parameters.AddWithValue("$notes", (object?)cage.Notes ?? DBNull.Value);
     }
 
@@ -74,6 +103,7 @@ public class CageRepository
         Id = reader.GetInt32(0),
         Name = reader.GetString(1),
         Capacity = reader.GetInt32(2),
-        Notes = reader.IsDBNull(3) ? "" : reader.GetString(3),
+        Type = Enum.TryParse<CageType>(reader.GetString(3), out var type) ? type : CageType.通常籠,
+        Notes = reader.IsDBNull(4) ? "" : reader.GetString(4),
     };
 }

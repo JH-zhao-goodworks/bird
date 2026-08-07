@@ -10,10 +10,12 @@ public class ReservationRepository
     public ReservationRepository(DatabaseService db) => _db = db;
 
     private const string BaseSelect = """
-        SELECT r.Id, r.BirdId, r.CageId, r.StartDate, r.EndDate, r.Notes, b.Name, c.Name
+        SELECT r.Id, r.BirdId, r.CageId, r.StartDate, r.EndDate, r.Notes, b.Name, c.Name,
+               b.OwnerId, IFNULL(o.Name, '')
         FROM Reservations r
         JOIN Birds b ON b.Id = r.BirdId
         JOIN Cages c ON c.Id = r.CageId
+        LEFT JOIN Owners o ON o.Id = b.OwnerId
         """;
 
     public List<Reservation> GetAll()
@@ -41,12 +43,17 @@ public class ReservationRepository
         return result;
     }
 
-    // 指定日時点で在籠中（滞在期間に含まれる）の予約一覧を取得する（ホーム画面の籠一覧表示用）
-    public List<Reservation> GetActiveOn(DateTime date)
+    public List<Reservation> GetByBird(int birdId)
     {
-        return GetAll()
-            .Where(r => r.StartDate.Date <= date.Date && (r.EndDate is null || r.EndDate.Value.Date >= date.Date))
-            .ToList();
+        using var connection = _db.OpenConnection();
+        using var cmd = connection.CreateCommand();
+        cmd.CommandText = BaseSelect + " WHERE r.BirdId = $birdId ORDER BY r.StartDate;";
+        cmd.Parameters.AddWithValue("$birdId", birdId);
+        using var reader = cmd.ExecuteReader();
+        var result = new List<Reservation>();
+        while (reader.Read())
+            result.Add(Map(reader));
+        return result;
     }
 
     public int Insert(Reservation reservation)
@@ -113,5 +120,7 @@ public class ReservationRepository
         Notes = reader.IsDBNull(5) ? "" : reader.GetString(5),
         BirdName = reader.GetString(6),
         CageName = reader.GetString(7),
+        OwnerId = reader.IsDBNull(8) ? null : reader.GetInt32(8),
+        OwnerName = reader.GetString(9),
     };
 }
