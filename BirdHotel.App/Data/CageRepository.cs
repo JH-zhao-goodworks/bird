@@ -13,7 +13,7 @@ public class CageRepository
     {
         using var connection = _db.OpenConnection();
         using var cmd = connection.CreateCommand();
-        cmd.CommandText = "SELECT Id, Name, Capacity, CageType, Notes FROM Cages;";
+        cmd.CommandText = "SELECT Id, Name, Capacity, CageType, GroupName, GroupOrder, Notes FROM Cages;";
         using var reader = cmd.ExecuteReader();
         var result = new List<Cage>();
         while (reader.Read())
@@ -53,7 +53,7 @@ public class CageRepository
     {
         using var connection = _db.OpenConnection();
         using var cmd = connection.CreateCommand();
-        cmd.CommandText = "SELECT Id, Name, Capacity, CageType, Notes FROM Cages WHERE Id = $id;";
+        cmd.CommandText = "SELECT Id, Name, Capacity, CageType, GroupName, GroupOrder, Notes FROM Cages WHERE Id = $id;";
         cmd.Parameters.AddWithValue("$id", id);
         using var reader = cmd.ExecuteReader();
         return reader.Read() ? Map(reader) : null;
@@ -64,7 +64,7 @@ public class CageRepository
         using var connection = _db.OpenConnection();
         using var cmd = connection.CreateCommand();
         cmd.CommandText = """
-            INSERT INTO Cages (Name, Capacity, CageType, Notes) VALUES ($name, $capacity, $cageType, $notes);
+            INSERT INTO Cages (Name, Capacity, CageType, GroupName, GroupOrder, Notes) VALUES ($name, $capacity, $cageType, $groupName, $groupOrder, $notes);
             SELECT last_insert_rowid();
             """;
         AddParams(cmd, cage);
@@ -75,7 +75,7 @@ public class CageRepository
     {
         using var connection = _db.OpenConnection();
         using var cmd = connection.CreateCommand();
-        cmd.CommandText = "UPDATE Cages SET Name = $name, Capacity = $capacity, CageType = $cageType, Notes = $notes WHERE Id = $id;";
+        cmd.CommandText = "UPDATE Cages SET Name = $name, Capacity = $capacity, CageType = $cageType, GroupName = $groupName, GroupOrder = $groupOrder, Notes = $notes WHERE Id = $id;";
         AddParams(cmd, cage);
         cmd.Parameters.AddWithValue("$id", cage.Id);
         cmd.ExecuteNonQuery();
@@ -95,6 +95,8 @@ public class CageRepository
         cmd.Parameters.AddWithValue("$name", cage.Name);
         cmd.Parameters.AddWithValue("$capacity", cage.Capacity);
         cmd.Parameters.AddWithValue("$cageType", cage.Type.ToString());
+        cmd.Parameters.AddWithValue("$groupName", (object?)cage.GroupName ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("$groupOrder", cage.GroupOrder);
         cmd.Parameters.AddWithValue("$notes", (object?)cage.Notes ?? DBNull.Value);
     }
 
@@ -104,6 +106,8 @@ public class CageRepository
         Name = reader.GetString(1),
         Capacity = reader.GetInt32(2),
         Type = Enum.TryParse<CageType>(reader.GetString(3), out var type) ? type : CageType.通常籠,
-        Notes = reader.IsDBNull(4) ? "" : reader.GetString(4),
+        GroupName = reader.IsDBNull(4) ? "" : reader.GetString(4),
+        GroupOrder = reader.GetInt32(5),
+        Notes = reader.IsDBNull(6) ? "" : reader.GetString(6),
     };
 }

@@ -18,7 +18,16 @@ public class ReservationBulkImportForm : Form
 
     private List<GroupPlan> _plannedGroups = new();
 
-    private record ParsedRow(int LineNumber, string Species, string Name, string Owner, string Group, DateTime Start, DateTime? End, string? Error);
+    private record ParsedRow(int LineNumber, string Name, string Species, string Owner, bool CanPair, string PairName, DateTime Start, DateTime? End, string? Error)
+    {
+        // ペア可の鳥はペア名ごとに同じ籠へまとめる。ペア不可の鳥は1羽ずつ別の籠になる。
+        public string GroupKey => CanPair && PairName.Length > 0 ? PairName : "";
+
+        // エラー時に「どの列が何として読み取られたか」を見せるための元テキスト
+        public string RawPairFlag { get; init; } = "";
+        public string RawStart { get; init; } = "";
+        public string RawEnd { get; init; } = "";
+    }
 
     private record GroupPlan(List<ParsedRow> Members, Cage? AssignedCage, string Status);
 
@@ -54,8 +63,8 @@ public class ReservationBulkImportForm : Form
 
         var instructionLabel = new Label
         {
-            Text = "1行1羽で「種類, 名前, 飼い主, グループ, 開始日, 終了日」の順に貼り付けてください（タブ区切り・カンマ区切り対応）。\n" +
-                   "同じ籠に入れたい鳥には同じグループ名を付けてください（グループ名・開始日・終了日が一致する行だけ同じ籠にまとまります）。単独の籠でよい場合はグループ欄を空欄にしてください。\n" +
+            Text = "1行1羽で「鳥名前, 種類, 飼い主, ペア可否, ペア名, 開始日, 終了日」の順に貼り付けてください（タブ区切り・カンマ区切り対応）。Excel出力したものをそのまま貼り付けられます。\n" +
+                   "「ペア可否」は他の鳥と同じ籠に入れてよいかで「可」または「不可」を入力します（空欄の場合はペア名の有無で判断します）。同じ籠に入れたい鳥には同じ「ペア名」を付けてください（ペア名・開始日・終了日が一致する行だけ同じ籠にまとまります）。\n" +
                    "終了日を空欄または「無期限」にすると、経営者の鳥のような退室日未定の予約になります。空いている籠へ自動的に割り当てられます。",
             Dock = DockStyle.Top,
             AutoSize = true,
@@ -80,7 +89,7 @@ public class ReservationBulkImportForm : Form
             SelectionMode = DataGridViewSelectionMode.FullRowSelect,
             RowTemplate = { Height = 28 },
         };
-        _previewGrid.Columns.Add("Group", "グループ");
+        _previewGrid.Columns.Add("Group", "ペア名");
         _previewGrid.Columns.Add("Members", "鳥（種類・飼い主）");
         _previewGrid.Columns.Add("Start", "開始日");
         _previewGrid.Columns.Add("End", "終了日");
@@ -122,16 +131,29 @@ public class ReservationBulkImportForm : Form
             var parts = (line.Contains('\t') ? line.Split('\t') : line.Split(',')).Select(p => p.Trim()).ToArray();
             string Get(int i) => i < parts.Length ? parts[i] : "";
 
-            var species = Get(0);
-            var name = Get(1);
+            var name = Get(0);
+            var species = Get(1);
             var owner = Get(2);
-            var group = Get(3);
-            var startText = Get(4);
-            var endText = Get(5);
+            var pairText = Get(3);
+            var pairName = Get(4);
+            var startText = Get(5);
+            var endText = Get(6);
 
-            if (species == "種類" && name == "名前") continue; // ヘッダー行らしき行はスキップ
+            if (name is "鳥名前" or "名前" && species == "種類") continue; // ヘッダー行らしき行はスキップ
 
-            var row = BuildRow(lineNumber, species, name, owner, group, startText, endText);
+            // 鳥名前の列が無く6列だけ貼られた場合は、どの列が足りないかを具体的に伝える
+            if (parts.Length == 6 && TryParseDate(Get(4), out _) && !TryParseDate(Get(3), out _))
+            {
+                errorRows.Add(new ParsedRow(lineNumber, name, species, owner, false, pairName, default, null,
+                    "鳥名前の列が抜けています（6列しかありません）。先頭に鳥の名前の列を足して7列にしてください")
+                {
+                    RawStart = startText,
+                    RawEnd = endText,
+                });
+                continue;
+            }
+
+            var row = BuildRow(lineNumber, name, species, owner, pairText, pairName, startText, endText);
             if (row.Error is null) validRows.Add(row);
             else errorRows.Add(row);
         }
@@ -144,7 +166,7 @@ public class ReservationBulkImportForm : Form
             var members = string.Join("、", group.Members.Select(m => $"{m.Name}（{m.Species}・{m.Owner}）"));
             var start = group.Members[0].Start.ToString("yyyy/MM/dd");
             var end = group.Members[0].End?.ToString("yyyy/MM/dd") ?? "無期限";
-            var groupLabel = group.Members[0].Group.Length > 0 ? group.Members[0].Group : "(単独)";
+            var groupLabel = group.Members[0].GroupKey.Length > 0 ? group.Members[0].GroupKey : "(単独)";
             var rowIndex = _previewGrid.Rows.Add(groupLabel, members, start, end, group.Status);
             if (group.AssignedCage is null)
                 _previewGrid.Rows[rowIndex].DefaultCellStyle.BackColor = Color.MistyRose;
@@ -152,7 +174,13 @@ public class ReservationBulkImportForm : Form
 
         foreach (var errorRow in errorRows)
         {
-            var rowIndex = _previewGrid.Rows.Add("-", $"{errorRow.LineNumber}行目: {errorRow.Name}", "-", "-", "エラー: " + errorRow.Error);
+            // どの列が何として読み取られたか分かるように、元のテキストをそのまま並べる
+            var rowIndex = _previewGrid.Rows.Add(
+                errorRow.PairName.Length > 0 ? errorRow.PairName : "-",
+                $"{errorRow.LineNumber}行目: {errorRow.Name}（{errorRow.Species}・{errorRow.Owner}）",
+                errorRow.RawStart.Length > 0 ? errorRow.RawStart : "-",
+                errorRow.RawEnd.Length > 0 ? errorRow.RawEnd : "-",
+                "エラー: " + errorRow.Error);
             _previewGrid.Rows[rowIndex].DefaultCellStyle.BackColor = Color.MistyRose;
         }
 
@@ -161,16 +189,32 @@ public class ReservationBulkImportForm : Form
         _summaryLabel.Text = $"{_plannedGroups.Count}グループ（{totalBirds}羽）中 配属可能{assignedCount}件 / 配属不可{_plannedGroups.Count - assignedCount}件 / 行エラー{errorRows.Count}件";
     }
 
-    private static ParsedRow BuildRow(int lineNumber, string species, string name, string owner, string group, string startText, string endText)
+    private static ParsedRow BuildRow(int lineNumber, string name, string species, string owner, string pairText, string pairName, string startText, string endText)
     {
-        if (species.Length == 0)
-            return new ParsedRow(lineNumber, species, name, owner, group, default, null, "種類が空です");
-        if (name.Length == 0)
-            return new ParsedRow(lineNumber, species, name, owner, group, default, null, "名前が空です");
-        if (owner.Length == 0)
-            return new ParsedRow(lineNumber, species, name, owner, group, default, null, "飼い主が空です");
+        ParsedRow Error(string message) => new(lineNumber, name, species, owner, false, pairName, default, null, message)
+        {
+            RawPairFlag = pairText,
+            RawStart = startText,
+            RawEnd = endText,
+        };
+
+        if (name.Length == 0) return Error("名前が空です");
+        if (species.Length == 0) return Error("種類が空です");
+        if (owner.Length == 0) return Error("飼い主が空です");
+
+        // 列が1つずれていると、日付がペア名の位置に来たり、可否が飼い主の位置に来たりする
+        if (TryParseDate(pairName, out _))
+            return Error("列がずれています（ペア名の位置に日付があります）。鳥名前, 種類, 飼い主, ペア可否, ペア名, 開始日, 終了日 の7列で貼り付けてください");
+        if (IsPairKeyword(owner) || IsPairKeyword(species))
+            return Error("列がずれています（種類か飼い主の位置に「可/不可」があります）。鳥名前, 種類, 飼い主, ペア可否, ペア名, 開始日, 終了日 の7列で貼り付けてください");
+
+        if (!TryParsePairFlag(pairText, pairName, out var canPair))
+            return Error("ペア可否の欄は「可」または「不可」で入力してください");
+        if (canPair && pairName.Length == 0)
+            return Error("ペア可の場合はペア名を入力してください");
+
         if (!TryParseDate(startText, out var start))
-            return new ParsedRow(lineNumber, species, name, owner, group, default, null, "開始日が読み取れません");
+            return Error("開始日が読み取れません");
 
         DateTime? end;
         if (endText.Length == 0 || endText is "無期限" or "むきげん")
@@ -183,13 +227,44 @@ public class ReservationBulkImportForm : Form
         }
         else
         {
-            return new ParsedRow(lineNumber, species, name, owner, group, start, null, "終了日が読み取れません");
+            return Error("終了日が読み取れません");
         }
 
         if (end is not null && end.Value < start)
-            return new ParsedRow(lineNumber, species, name, owner, group, start, end, "終了日が開始日より前です");
+            return Error("終了日が開始日より前です");
 
-        return new ParsedRow(lineNumber, species, name, owner, group, start, end, null);
+        return new ParsedRow(lineNumber, name, species, owner, canPair, canPair ? pairName : "", start, end, null)
+        {
+            RawPairFlag = pairText,
+            RawStart = startText,
+            RawEnd = endText,
+        };
+    }
+
+    private static bool IsPairKeyword(string text) =>
+        text is "可" or "不可" or "○" or "〇" or "◯" or "×";
+
+    private static bool TryParsePairFlag(string text, string pairName, out bool canPair)
+    {
+        // 空欄のときはペア名が入っていれば「可」とみなす
+        if (text.Length == 0)
+        {
+            canPair = pairName.Length > 0 && pairName != "X" && pairName != "x";
+            return true;
+        }
+
+        switch (text)
+        {
+            case "可" or "○" or "〇" or "◯" or "はい" or "OK" or "ok" or "o" or "O" or "1":
+                canPair = true;
+                return true;
+            case "不可" or "X" or "x" or "×" or "いいえ" or "NG" or "ng" or "-" or "0":
+                canPair = false;
+                return true;
+            default:
+                canPair = false;
+                return false;
+        }
     }
 
     private static bool TryParseDate(string text, out DateTime value)
@@ -213,13 +288,13 @@ public class ReservationBulkImportForm : Form
             var members = new List<ParsedRow> { row };
             used[i] = true;
 
-            if (row.Group.Length > 0)
+            if (row.GroupKey.Length > 0)
             {
                 for (var j = i + 1; j < validRows.Count; j++)
                 {
                     if (used[j]) continue;
                     var other = validRows[j];
-                    if (other.Group == row.Group && other.Start == row.Start && other.End == row.End)
+                    if (other.GroupKey == row.GroupKey && other.Start == row.Start && other.End == row.End)
                     {
                         members.Add(other);
                         used[j] = true;
@@ -243,6 +318,9 @@ public class ReservationBulkImportForm : Form
                     provisional.Add((cage.Id, reservation.StartDate, reservation.EndDate));
 
         var allBirds = _birdRepository.GetAll();
+        var proprietorOwnerNames = new HashSet<string>(
+            _ownerRepository.GetAll().Where(o => o.IsProprietor).Select(o => o.Name), StringComparer.Ordinal);
+
         var plans = new List<GroupPlan>();
         foreach (var (_, members) in rawGroups.OrderBy(g => g.FirstIndex))
         {
@@ -250,9 +328,13 @@ public class ReservationBulkImportForm : Form
             var end = members[0].End;
             var size = members.Count;
 
-            var cage = cages.FirstOrDefault(c =>
-                size <= c.Capacity &&
-                !provisional.Any(p => p.CageId == c.Id && Overlaps(p.Start, p.End, start, end)));
+            // 経営者の鳥は末尾が1・2の籠を優先。末尾が5・6の籠はどのグループでも最後に回す。
+            var isProprietorGroup = members.Any(m => proprietorOwnerNames.Contains(m.Owner));
+            var cage = cages
+                .OrderBy(c => c.AssignmentPriority(isProprietorGroup))
+                .FirstOrDefault(c =>
+                    size <= c.Capacity &&
+                    !provisional.Any(p => p.CageId == c.Id && Overlaps(p.Start, p.End, start, end)));
 
             var replaceNote = members.Any(m => HasSamePeriodReservation(allBirds, m)) ? "（既存予約を置き換え）" : "";
 
@@ -371,9 +453,8 @@ public class ReservationBulkImportForm : Form
                         Size = BirdSize.中小型,
                         Gender = BirdGender.不明,
                         OwnerId = ownerId,
-                        // グループ名をそのままペア名として引き継ぐ（同じ籠に入れてよい鳥の目印になる）
-                        CanPair = member.Group.Length > 0,
-                        PairName = member.Group,
+                        CanPair = member.CanPair,
+                        PairName = member.PairName,
                     });
                     existingBirds.Add(new Bird { Id = birdId, Name = member.Name, OwnerName = member.Owner });
                 }

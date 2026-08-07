@@ -69,6 +69,8 @@ public class DatabaseService
                     Name TEXT NOT NULL,
                     Capacity INTEGER NOT NULL DEFAULT 2,
                     CageType TEXT NOT NULL DEFAULT '通常籠',
+                    GroupName TEXT NULL,
+                    GroupOrder INTEGER NOT NULL DEFAULT 0,
                     Notes TEXT NULL
                 );
 
@@ -113,6 +115,20 @@ public class DatabaseService
         {
             using var cmd = connection.CreateCommand();
             cmd.CommandText = "ALTER TABLE Cages ADD COLUMN CageType TEXT NOT NULL DEFAULT '通常籠';";
+            cmd.ExecuteNonQuery();
+        }
+
+        if (!cageColumns.Contains("GroupName"))
+        {
+            using var cmd = connection.CreateCommand();
+            cmd.CommandText = "ALTER TABLE Cages ADD COLUMN GroupName TEXT NULL;";
+            cmd.ExecuteNonQuery();
+        }
+
+        if (!cageColumns.Contains("GroupOrder"))
+        {
+            using var cmd = connection.CreateCommand();
+            cmd.CommandText = "ALTER TABLE Cages ADD COLUMN GroupOrder INTEGER NOT NULL DEFAULT 0;";
             cmd.ExecuteNonQuery();
         }
     }

@@ -122,6 +122,7 @@ public class ReservationForm : Form
         _availabilityGrid.Columns.Add("Capacity", "定員");
         _availabilityGrid.Columns.Add("Occupied", "予定在籠数");
         _availabilityGrid.Columns.Add("Remaining", "空き");
+        _availabilityGrid.Columns.Add("Priority", "優先");
         foreach (DataGridViewColumn col in _availabilityGrid.Columns)
             col.SortMode = DataGridViewColumnSortMode.NotSortable; // 行の並びと_availabilityRowsの添字を一致させ続けるため
 
@@ -227,16 +228,24 @@ public class ReservationForm : Form
             return;
         }
 
+        // 経営者の鳥は末尾が1・2の籠を優先し、末尾が5・6の籠は最後に回した順番で並べる
+        var forProprietor = GetCheckedBirds().Any(b => b.IsProprietorBird);
+        var orderedCages = _cages.OrderBy(c => c.AssignmentPriority(forProprietor)).ToList();
+
         _availabilityRows.Clear();
         _availabilityGrid.Rows.Clear();
-        foreach (var cage in _cages)
+        foreach (var cage in orderedCages)
         {
             var occupied = _reservationRepository.CountOverlapping(cage.Id, start, end);
             // 鳥が1羽でもいる期間は、定員に関わらず「空きなし」として扱う（同じ籠に別の予約の鳥を混在させないため）
             var remaining = occupied > 0 ? 0 : cage.Capacity;
             _availabilityRows.Add((cage, occupied, remaining));
 
-            var rowIndex = _availabilityGrid.Rows.Add(cage.Name, cage.Capacity, occupied, remaining);
+            var note = cage.IsLastResort ? "空きが無い時のみ"
+                : cage.IsProprietorPreferred ? "経営者の鳥を優先"
+                : "";
+
+            var rowIndex = _availabilityGrid.Rows.Add(cage.Name, cage.Capacity, occupied, remaining, note);
             if (remaining <= 0)
                 _availabilityGrid.Rows[rowIndex].DefaultCellStyle.BackColor = Color.MistyRose;
         }

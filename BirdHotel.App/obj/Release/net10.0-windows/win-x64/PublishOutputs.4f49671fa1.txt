@@ -3,7 +3,14 @@ C:\Users\趙矜涵（ZHAOJinhan）\Documents\BirdHotelReservation\BirdHotel.App\
 C:\Users\趙矜涵（ZHAOJinhan）\Documents\BirdHotelReservation\BirdHotel.App\publish-framework-dependent\BirdHotelReservation.deps.json
 C:\Users\趙矜涵（ZHAOJinhan）\Documents\BirdHotelReservation\BirdHotel.App\publish-framework-dependent\BirdHotelReservation.runtimeconfig.json
 C:\Users\趙矜涵（ZHAOJinhan）\Documents\BirdHotelReservation\BirdHotel.App\publish-framework-dependent\BirdHotelReservation.pdb
+C:\Users\趙矜涵（ZHAOJinhan）\Documents\BirdHotelReservation\BirdHotel.App\publish-framework-dependent\ClosedXML.dll
+C:\Users\趙矜涵（ZHAOJinhan）\Documents\BirdHotelReservation\BirdHotel.App\publish-framework-dependent\ClosedXML.Parser.dll
+C:\Users\趙矜涵（ZHAOJinhan）\Documents\BirdHotelReservation\BirdHotel.App\publish-framework-dependent\DocumentFormat.OpenXml.dll
+C:\Users\趙矜涵（ZHAOJinhan）\Documents\BirdHotelReservation\BirdHotel.App\publish-framework-dependent\DocumentFormat.OpenXml.Framework.dll
+C:\Users\趙矜涵（ZHAOJinhan）\Documents\BirdHotelReservation\BirdHotel.App\publish-framework-dependent\ExcelNumberFormat.dll
 C:\Users\趙矜涵（ZHAOJinhan）\Documents\BirdHotelReservation\BirdHotel.App\publish-framework-dependent\Microsoft.Data.Sqlite.dll
+C:\Users\趙矜涵（ZHAOJinhan）\Documents\BirdHotelReservation\BirdHotel.App\publish-framework-dependent\RBush.dll
+C:\Users\趙矜涵（ZHAOJinhan）\Documents\BirdHotelReservation\BirdHotel.App\publish-framework-dependent\SixLabors.Fonts.dll
 C:\Users\趙矜涵（ZHAOJinhan）\Documents\BirdHotelReservation\BirdHotel.App\publish-framework-dependent\SQLitePCLRaw.batteries_v2.dll
 C:\Users\趙矜涵（ZHAOJinhan）\Documents\BirdHotelReservation\BirdHotel.App\publish-framework-dependent\SQLitePCLRaw.core.dll
 C:\Users\趙矜涵（ZHAOJinhan）\Documents\BirdHotelReservation\BirdHotel.App\publish-framework-dependent\SQLitePCLRaw.provider.e_sqlite3.dll

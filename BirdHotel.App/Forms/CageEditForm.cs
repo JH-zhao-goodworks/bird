@@ -6,14 +6,27 @@ public class CageEditForm : Form
 {
     public Cage Cage { get; }
 
+    private readonly List<string> _existingGroupNames;
+
     private TextBox _nameBox = null!;
     private NumericUpDown _capacityUpDown = null!;
     private ComboBox _typeCombo = null!;
+    private ComboBox _groupCombo = null!;
     private TextBox _notesBox = null!;
 
-    public CageEditForm(Cage cage)
+    public CageEditForm(Cage cage, IEnumerable<string> existingGroupNames)
     {
-        Cage = new Cage { Id = cage.Id, Name = cage.Name, Capacity = cage.Capacity, Type = cage.Type, Notes = cage.Notes };
+        _existingGroupNames = existingGroupNames.Where(g => g.Length > 0).Distinct().ToList();
+        Cage = new Cage
+        {
+            Id = cage.Id,
+            Name = cage.Name,
+            Capacity = cage.Capacity,
+            Type = cage.Type,
+            GroupName = cage.GroupName,
+            GroupOrder = cage.GroupOrder,
+            Notes = cage.Notes,
+        };
         BuildUi();
         LoadFromCage();
     }
@@ -22,7 +35,7 @@ public class CageEditForm : Form
     {
         Text = Cage.Id == 0 ? "籠の新規登録" : "籠の編集";
         Width = 420;
-        Height = 360;
+        Height = 470;
         StartPosition = FormStartPosition.CenterParent;
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false;
@@ -58,9 +71,24 @@ public class CageEditForm : Form
         });
         layout.Controls.Add(typePanel, 1, 2);
 
-        layout.Controls.Add(new Label { Text = "備考", AutoSize = true, Margin = new Padding(3, 8, 3, 3) }, 0, 3);
+        layout.Controls.Add(new Label { Text = "グループ", AutoSize = true, Margin = new Padding(3, 8, 3, 3) }, 0, 3);
+        var groupPanel = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.TopDown };
+        _groupCombo = new ComboBox { Width = 200, DropDownStyle = ComboBoxStyle.DropDown };
+        foreach (var groupName in _existingGroupNames)
+            _groupCombo.Items.Add(groupName);
+        groupPanel.Controls.Add(_groupCombo);
+        groupPanel.Controls.Add(new Label
+        {
+            Text = "同じグループ名の籠は、ホーム画面でまとめて表示されます。\n空欄の場合は「グループなし」にまとまります。",
+            AutoSize = true,
+            ForeColor = Color.Gray,
+            MaximumSize = new Size(260, 0),
+        });
+        layout.Controls.Add(groupPanel, 1, 3);
+
+        layout.Controls.Add(new Label { Text = "備考", AutoSize = true, Margin = new Padding(3, 8, 3, 3) }, 0, 4);
         _notesBox = new TextBox { Width = 200, Height = 60, Multiline = true };
-        layout.Controls.Add(_notesBox, 1, 3);
+        layout.Controls.Add(_notesBox, 1, 4);
 
         var buttonPanel = new FlowLayoutPanel { Dock = DockStyle.Bottom, FlowDirection = FlowDirection.RightToLeft, Height = 50, Padding = new Padding(10) };
         var cancelButton = new Button { Text = "キャンセル", Width = 90, Height = 32, DialogResult = DialogResult.Cancel };
@@ -80,6 +108,7 @@ public class CageEditForm : Form
         _nameBox.Text = Cage.Name;
         _capacityUpDown.Value = Math.Clamp(Cage.Capacity, _capacityUpDown.Minimum, _capacityUpDown.Maximum);
         _typeCombo.SelectedItem = Cage.Type.ToString();
+        _groupCombo.Text = Cage.GroupName;
         _notesBox.Text = Cage.Notes;
     }
 
@@ -94,6 +123,7 @@ public class CageEditForm : Form
         Cage.Name = _nameBox.Text.Trim();
         Cage.Capacity = (int)_capacityUpDown.Value;
         Cage.Type = Enum.Parse<CageType>((string)_typeCombo.SelectedItem!);
+        Cage.GroupName = _groupCombo.Text.Trim();
         Cage.Notes = _notesBox.Text.Trim();
 
         DialogResult = DialogResult.OK;

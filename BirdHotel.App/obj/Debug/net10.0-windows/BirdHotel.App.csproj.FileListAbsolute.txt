@@ -52,3 +52,10 @@ C:\Users\趙矜涵（ZHAOJinhan）\Documents\BirdHotelReservation\BirdHotel.App\
 C:\Users\趙矜涵（ZHAOJinhan）\Documents\BirdHotelReservation\BirdHotel.App\obj\Debug\net10.0-windows\BirdHotel.App.Forms.CageEditForm.resources
 C:\Users\趙矜涵（ZHAOJinhan）\Documents\BirdHotelReservation\BirdHotel.App\obj\Debug\net10.0-windows\BirdHotel.App.csproj.GenerateResource.cache
 C:\Users\趙矜涵（ZHAOJinhan）\Documents\BirdHotelReservation\BirdHotel.App\obj\Debug\net10.0-windows\BirdHotel.App.sourcelink.json
+C:\Users\趙矜涵（ZHAOJinhan）\Documents\BirdHotelReservation\BirdHotel.App\bin\Debug\net10.0-windows\ClosedXML.dll
+C:\Users\趙矜涵（ZHAOJinhan）\Documents\BirdHotelReservation\BirdHotel.App\bin\Debug\net10.0-windows\ClosedXML.Parser.dll
+C:\Users\趙矜涵（ZHAOJinhan）\Documents\BirdHotelReservation\BirdHotel.App\bin\Debug\net10.0-windows\DocumentFormat.OpenXml.dll
+C:\Users\趙矜涵（ZHAOJinhan）\Documents\BirdHotelReservation\BirdHotel.App\bin\Debug\net10.0-windows\DocumentFormat.OpenXml.Framework.dll
+C:\Users\趙矜涵（ZHAOJinhan）\Documents\BirdHotelReservation\BirdHotel.App\bin\Debug\net10.0-windows\ExcelNumberFormat.dll
+C:\Users\趙矜涵（ZHAOJinhan）\Documents\BirdHotelReservation\BirdHotel.App\bin\Debug\net10.0-windows\RBush.dll
+C:\Users\趙矜涵（ZHAOJinhan）\Documents\BirdHotelReservation\BirdHotel.App\bin\Debug\net10.0-windows\SixLabors.Fonts.dll

@@ -49,6 +49,7 @@ public class CageListForm : Form
         _grid.Columns.Add("Name", "籠名");
         _grid.Columns.Add("Capacity", "定員（既定2、特別時は変更可）");
         _grid.Columns.Add("Type", "種別");
+        _grid.Columns.Add("Group", "グループ");
         _grid.Columns.Add("Notes", "備考");
         foreach (DataGridViewColumn col in _grid.Columns)
             col.SortMode = DataGridViewColumnSortMode.NotSortable; // 行の並びとリストの添字を一致させ続けるため
@@ -63,12 +64,15 @@ public class CageListForm : Form
         _cages = _cageRepository.GetAll();
         _grid.Rows.Clear();
         foreach (var cage in _cages)
-            _grid.Rows.Add(cage.Name, cage.Capacity, cage.Type.ToString(), cage.Notes);
+            _grid.Rows.Add(cage.Name, cage.Capacity, cage.Type.ToString(), cage.GroupName, cage.Notes);
     }
+
+    private List<string> GetExistingGroupNames() =>
+        _cages.Select(c => c.GroupName).Where(g => g.Length > 0).Distinct().ToList();
 
     private void AddCage()
     {
-        using var editForm = new CageEditForm(new Cage { Capacity = 2 });
+        using var editForm = new CageEditForm(new Cage { Capacity = 2 }, GetExistingGroupNames());
         if (editForm.ShowDialog(this) == DialogResult.OK)
         {
             _cageRepository.Insert(editForm.Cage);
@@ -81,7 +85,7 @@ public class CageListForm : Form
         var cage = GetSelectedCage();
         if (cage is null) return;
 
-        using var editForm = new CageEditForm(cage);
+        using var editForm = new CageEditForm(cage, GetExistingGroupNames());
         if (editForm.ShowDialog(this) == DialogResult.OK)
         {
             _cageRepository.Update(editForm.Cage);

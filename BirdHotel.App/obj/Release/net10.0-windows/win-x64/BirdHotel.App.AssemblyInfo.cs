@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("BirdHotelReservation")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+8aaf2d5cbc74039ed8f0aa07c11cb089893dc335")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f980c5637be0d23a3bf6f6339d7106f91636ebb9")]
 [assembly: System.Reflection.AssemblyProductAttribute("小鳥ホテル予約システム")]
 [assembly: System.Reflection.AssemblyTitleAttribute("BirdHotelReservation")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

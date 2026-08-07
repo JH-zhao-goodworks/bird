@@ -5,6 +5,10 @@ namespace BirdHotel.App.Forms;
 
 public class MainForm : Form
 {
+    private const int CardWidth = 196;
+    private const int CardHeight = 132;
+    private const int CardMargin = 4;
+
     private static readonly Color[] OwnerColorPalette =
     [
         Color.FromArgb(255, 224, 178), // オレンジ
@@ -39,8 +43,8 @@ public class MainForm : Form
     private void BuildUi()
     {
         Text = "小鳥ホテル 籠一覧";
-        Width = 1040;
-        Height = 680;
+        Width = 1060; // カード4枚がちょうど1行に収まる幅
+        Height = 700;
         StartPosition = FormStartPosition.CenterScreen;
         Font = new Font("Yu Gothic UI", 10F);
 
@@ -67,6 +71,9 @@ public class MainForm : Form
         var bulkReservationButton = new Button { Text = "予約の一括登録", Width = 130, Height = 36 };
         bulkReservationButton.Click += (_, _) => OpenReservationBulkImport();
 
+        var exportButton = new Button { Text = "Excel出力", Width = 100, Height = 36 };
+        exportButton.Click += (_, _) => ExportReservations();
+
         var clearAllButton = new Button { Text = "全籠クリア", Width = 100, Height = 36, Margin = new Padding(20, 3, 3, 3) };
         clearAllButton.Click += (_, _) => ClearAllCages();
 
@@ -78,6 +85,7 @@ public class MainForm : Form
         topPanel.Controls.Add(cageButton);
         topPanel.Controls.Add(reservationButton);
         topPanel.Controls.Add(bulkReservationButton);
+        topPanel.Controls.Add(exportButton);
         topPanel.Controls.Add(clearAllButton);
         topPanel.Controls.Add(refreshButton);
 
@@ -101,6 +109,63 @@ public class MainForm : Form
         var cages = _cageRepository.GetAll();
         var allReservations = _reservationRepository.GetAll();
 
+        foreach (var group in OrderGroups(cages))
+        {
+            var groupLabel = group.Key.Length > 0 ? group.Key : "グループなし";
+            _cardsPanel.Controls.Add(BuildCageGroupBox(group.Key, groupLabel, group.ToList(), allReservations));
+        }
+
+        _cardsPanel.ResumeLayout();
+    }
+
+    // 表示順（GroupOrder）が設定されていればその順、未設定なら名前順。グループ未設定の籠は最後。
+    private static List<IGrouping<string, Cage>> OrderGroups(List<Cage> cages) =>
+        cages
+            .GroupBy(c => c.GroupName)
+            .OrderBy(g => g.Min(c => c.GroupOrder) == 0)
+            .ThenBy(g => g.Min(c => c.GroupOrder))
+            .ThenBy(g => g.Key.Length == 0)
+            .ThenBy(g => g.Key, Comparer<string>.Create(CageRepository.CompareNatural))
+            .ToList();
+
+    // グループを左右に1つ移動して、その並び順を保存する
+    private void MoveGroup(string groupKey, int direction)
+    {
+        var cages = _cageRepository.GetAll();
+        var groupKeys = OrderGroups(cages).Select(g => g.Key).ToList();
+
+        var index = groupKeys.IndexOf(groupKey);
+        var target = index + direction;
+        if (index < 0 || target < 0 || target >= groupKeys.Count) return;
+
+        (groupKeys[index], groupKeys[target]) = (groupKeys[target], groupKeys[index]);
+
+        // 並び替え後の順番で 1 から振り直す
+        for (var i = 0; i < groupKeys.Count; i++)
+        {
+            foreach (var cage in cages.Where(c => c.GroupName == groupKeys[i]))
+            {
+                cage.GroupOrder = i + 1;
+                _cageRepository.Update(cage);
+            }
+        }
+
+        RefreshCards();
+    }
+
+    private Control BuildCageGroupBox(string groupKey, string groupLabel, List<Cage> cages, List<Reservation> allReservations)
+    {
+        // 1グループにつき横2枚ずつカードを並べる
+        const int columns = 2;
+        var rows = (cages.Count + columns - 1) / columns;
+
+        var cardsPanel = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            FlowDirection = FlowDirection.LeftToRight,
+            AutoScroll = false,
+        };
+
         foreach (var cage in cages)
         {
             var reservations = allReservations
@@ -108,10 +173,30 @@ public class MainForm : Form
                 .OrderBy(r => r.StartDate)
                 .ThenBy(r => r.BirdName)
                 .ToList();
-            _cardsPanel.Controls.Add(BuildCageCard(cage, reservations));
+            cardsPanel.Controls.Add(BuildCageCard(cage, reservations));
         }
 
-        _cardsPanel.ResumeLayout();
+        // グループの並び順を変えるボタン
+        var moveButtonPanel = new FlowLayoutPanel { Dock = DockStyle.Top, Height = 26, FlowDirection = FlowDirection.RightToLeft };
+        var moveRightButton = new Button { Text = "▶", Width = 32, Height = 22, Font = new Font("Yu Gothic UI", 8F), Margin = new Padding(2, 0, 2, 0) };
+        moveRightButton.Click += (_, _) => MoveGroup(groupKey, 1);
+        var moveLeftButton = new Button { Text = "◀", Width = 32, Height = 22, Font = new Font("Yu Gothic UI", 8F), Margin = new Padding(2, 0, 2, 0) };
+        moveLeftButton.Click += (_, _) => MoveGroup(groupKey, -1);
+        moveButtonPanel.Controls.Add(moveRightButton);
+        moveButtonPanel.Controls.Add(moveLeftButton);
+
+        var groupBox = new GroupBox
+        {
+            Text = groupLabel,
+            Width = columns * (CardWidth + CardMargin * 2) + 16,
+            Height = Math.Max(1, rows) * (CardHeight + CardMargin * 2) + 54,
+            Margin = new Padding(6),
+            Padding = new Padding(4),
+            Font = new Font("Yu Gothic UI", 10F, FontStyle.Bold),
+        };
+        groupBox.Controls.Add(cardsPanel);
+        groupBox.Controls.Add(moveButtonPanel);
+        return groupBox;
     }
 
     private Control BuildCageCard(Cage cage, List<Reservation> reservations)
@@ -125,35 +210,35 @@ public class MainForm : Form
 
         var card = new Panel
         {
-            Width = 420,
-            Height = 260,
-            Margin = new Padding(8),
+            Width = CardWidth,
+            Height = CardHeight,
+            Margin = new Padding(CardMargin),
             BorderStyle = BorderStyle.FixedSingle,
-            Padding = new Padding(8),
+            Padding = new Padding(6),
         };
 
-        var specialText = maxConcurrent > cage.Capacity ? $"　（特{maxConcurrent}）" : "";
-        var typeText = cage.Type == CageType.通常籠 ? "" : $"　[{cage.Type}]";
-        var headerPanel = new Panel { Dock = DockStyle.Top, Height = 26 };
+        // 狭いカードに収まるよう、種別は略号で表示する
+        var specialText = maxConcurrent > cage.Capacity ? $"（特{maxConcurrent}）" : "";
+        var typeText = cage.Type switch
+        {
+            CageType.経営者籠 => "[経]",
+            CageType.持ち込み籠 => "[持]",
+            _ => "",
+        };
         var headerLabel = new Label
         {
-            Text = $"{cage.Name}　定員{cage.Capacity}{typeText}{specialText}",
-            Dock = DockStyle.Fill,
-            Font = new Font("Yu Gothic UI", 11F, FontStyle.Bold),
+            Text = $"{cage.Name} 定員{cage.Capacity}{typeText}{specialText}",
+            Dock = DockStyle.Top,
+            Height = 18,
+            Font = new Font("Yu Gothic UI", 8.5F, FontStyle.Bold),
             Cursor = Cursors.Hand,
+            AutoEllipsis = true,
         };
-        var moveButton = new Button { Text = "移動", Dock = DockStyle.Right, Width = 60, Font = new Font("Yu Gothic UI", 8F) };
-        moveButton.Click += (_, _) => OpenCageMove(cage);
-        var clearButton = new Button { Text = "クリア", Dock = DockStyle.Right, Width = 60, Font = new Font("Yu Gothic UI", 8F) };
-        clearButton.Click += (_, _) => ClearCage(cage);
-        headerPanel.Controls.Add(headerLabel);
-        headerPanel.Controls.Add(moveButton);
-        headerPanel.Controls.Add(clearButton);
 
-        void OpenBooking(object? sender, EventArgs e) => OpenCageBooking(cage);
-        headerLabel.Click += OpenBooking;
+        void OpenDetail(object? sender, EventArgs e) => OpenCageDetail(cage);
+        headerLabel.Click += OpenDetail;
         card.Cursor = Cursors.Hand;
-        card.Click += OpenBooking;
+        card.Click += OpenDetail;
 
         var grid = new DataGridView
         {
@@ -163,15 +248,20 @@ public class MainForm : Form
             AllowUserToDeleteRows = false,
             AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
             SelectionMode = DataGridViewSelectionMode.FullRowSelect,
-            RowTemplate = { Height = 28 },
+            RowHeadersVisible = false,
+            ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing,
+            ColumnHeadersHeight = 20,
+            RowTemplate = { Height = 20 },
+            Font = new Font("Yu Gothic UI", 8F),
+            Cursor = Cursors.Hand,
         };
         grid.Columns.Add("Name", "名前");
-        grid.Columns.Add("Start", "開始日");
-        grid.Columns.Add("End", "終了日");
-        grid.Columns.Add("Total", "合計");
+        grid.Columns.Add("Period", "期間");
+        grid.Columns[0].FillWeight = 42;
+        grid.Columns[1].FillWeight = 58;
         foreach (DataGridViewColumn col in grid.Columns)
             col.SortMode = DataGridViewColumnSortMode.NotSortable;
-        grid.Click += OpenBooking;
+        grid.Click += OpenDetail;
 
         var ownerColors = new Dictionary<int, Color>();
         var nextColorIndex = 0;
@@ -189,39 +279,53 @@ public class MainForm : Form
 
         foreach (var r in reservations)
         {
-            string startText, endText, totalText;
-            if (r.IsIndefinite)
-            {
-                startText = endText = totalText = "無期限";
-            }
-            else
-            {
-                startText = r.StartDate.ToString("yyyy/MM/dd");
-                endText = r.EndDate!.Value.ToString("yyyy/MM/dd");
-                totalText = $"{(r.EndDate.Value - r.StartDate).Days}日間";
-            }
+            // 幅が狭いので期間は1列にまとめる。詳しくは籠をクリックした詳細画面で確認する。
+            var periodText = r.IsIndefinite
+                ? "無期限"
+                : $"{r.StartDate:MM/dd}〜{r.EndDate!.Value:MM/dd}";
 
-            var rowIndex = grid.Rows.Add(r.BirdName, startText, endText, totalText);
+            var rowIndex = grid.Rows.Add(r.BirdName, periodText);
             grid.Rows[rowIndex].DefaultCellStyle.BackColor = ColorForOwner(r.OwnerId);
         }
 
         card.Controls.Add(grid);
-        card.Controls.Add(headerPanel);
+        card.Controls.Add(headerLabel);
         return card;
     }
 
-    private void OpenCageMove(Cage cage)
+    private void OpenCageDetail(Cage cage)
     {
-        var reservations = _reservationRepository.GetByCage(cage.Id);
-        if (reservations.Count == 0)
+        using var form = new CageDetailForm(cage, _birdRepository, _cageRepository, _reservationRepository, _ownerRepository);
+        form.ShowDialog(this);
+        RefreshCards();
+    }
+
+    private void ExportReservations()
+    {
+        if (_reservationRepository.GetAll().Count == 0)
         {
-            MessageBox.Show($"「{cage.Name}」には移動できる鳥がいません。", "移動", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            MessageBox.Show("出力できる予約がありません。", "Excel出力", MessageBoxButtons.OK, MessageBoxIcon.Information);
             return;
         }
 
-        using var form = new CageMoveForm(cage, _cageRepository, _reservationRepository);
-        form.ShowDialog(this);
-        RefreshCards();
+        using var dialog = new SaveFileDialog
+        {
+            Title = "予約一覧の出力先を選んでください",
+            Filter = "Excelブック (*.xlsx)|*.xlsx",
+            FileName = $"予約一覧_{DateTime.Today:yyyyMMdd}.xlsx",
+        };
+        if (dialog.ShowDialog(this) != DialogResult.OK) return;
+
+        try
+        {
+            var exportService = new ReservationExportService(_birdRepository, _reservationRepository);
+            var count = exportService.ExportToExcel(dialog.FileName);
+            MessageBox.Show($"{count}件を出力しました。\n{dialog.FileName}", "Excel出力", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"出力に失敗しました。\n{ex.Message}", "Excel出力", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
     }
 
     private void ClearAllCages()
@@ -235,26 +339,6 @@ public class MainForm : Form
 
         var confirm = MessageBox.Show(
             $"すべての籠の予約{reservations.Count}件を取り消します。よろしいですか？（元に戻せません）",
-            "確認", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
-        if (confirm != DialogResult.Yes) return;
-
-        foreach (var reservation in reservations)
-            _reservationRepository.Delete(reservation.Id);
-
-        RefreshCards();
-    }
-
-    private void ClearCage(Cage cage)
-    {
-        var reservations = _reservationRepository.GetByCage(cage.Id);
-        if (reservations.Count == 0)
-        {
-            MessageBox.Show($"「{cage.Name}」には予約がありません。", "クリア", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            return;
-        }
-
-        var confirm = MessageBox.Show(
-            $"「{cage.Name}」の予約を{reservations.Count}件すべて取り消します。よろしいですか？（元に戻せません）",
             "確認", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
         if (confirm != DialogResult.Yes) return;
 
@@ -299,10 +383,4 @@ public class MainForm : Form
         RefreshCards();
     }
 
-    private void OpenCageBooking(Cage cage)
-    {
-        using var form = new CageBookingForm(cage, _birdRepository, _reservationRepository, _ownerRepository);
-        form.ShowDialog(this);
-        RefreshCards();
-    }
 }
