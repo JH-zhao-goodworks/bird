@@ -1,0 +1,60 @@
+@page
+@model BirdHotel.Web.Pages.Reservations.BulkImportModel
+@{
+    ViewData["Title"] = "予約の一括登録";
+}
+
+<h1>予約の一括登録（自動籠配属）</h1>
+
+<p class="hint">
+    1行1羽で「鳥名前, 種類, 飼い主, ペア可否, ペア名, 開始日, 終了日」の順に貼り付けてください（タブ区切り・カンマ区切り対応）。Excel出力したものをそのまま貼り付けられます。<br />
+    「ペア可否」は他の鳥と同じ籠に入れてよいかで「可」または「不可」を入力します。同じ籠に入れたい鳥には同じ「ペア名」を付けてください（ペア名・開始日・終了日が一致する行だけ同じ籠にまとまります）。<br />
+    終了日を空欄または「無期限」にすると、退室日未定の予約になります。空いている籠へ自動的に割り当てられます（経営者籠・持ち込み籠は対象外）。
+</p>
+
+<form method="post" class="stack" style="max-width: 100%;">
+    <label>貼り付け欄</label>
+    <textarea asp-for="InputText" rows="8"></textarea>
+    <div class="actions">
+        <button type="submit" asp-page-handler="Preview" class="secondary">解析して配属プレビュー</button>
+        @if (Model.Plans.Any(p => p.Cage is not null))
+        {
+            <button type="submit" asp-page-handler="Register">この内容で登録</button>
+        }
+    </div>
+</form>
+
+@if (Model.Plans.Count > 0 || Model.ErrorRows.Count > 0)
+{
+    <h2>配属プレビュー</h2>
+    <table class="list">
+        <tr>
+            <th>ペア名</th>
+            <th>鳥（種類・飼い主）</th>
+            <th>開始日</th>
+            <th>終了日</th>
+            <th>配属先</th>
+        </tr>
+        @foreach (var plan in Model.Plans)
+        {
+            var first = plan.Members[0];
+            <tr class="@(plan.Cage is null ? "full" : "")">
+                <td>@(first.GroupKey.Length > 0 ? first.GroupKey : "(単独)")</td>
+                <td>@string.Join("、", plan.Members.Select(m => $"{m.Name}（{m.Species}・{m.Owner}）"))</td>
+                <td>@first.Start.ToString("yyyy/MM/dd")</td>
+                <td>@(first.End?.ToString("yyyy/MM/dd") ?? "無期限")</td>
+                <td>@plan.Status</td>
+            </tr>
+        }
+        @foreach (var row in Model.ErrorRows)
+        {
+            <tr class="full">
+                <td>-</td>
+                <td>@row.LineNumber 行目: @row.Name（@row.Species・@row.Owner）</td>
+                <td>-</td>
+                <td>-</td>
+                <td>エラー: @row.Error</td>
+            </tr>
+        }
+    </table>
+}

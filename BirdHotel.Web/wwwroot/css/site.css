@@ -1,0 +1,153 @@
+/* スマホのブラウザで使うことを前提にした、シンプルな見た目にする */
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    font-family: "Yu Gothic UI", "Hiragino Sans", "Noto Sans JP", sans-serif;
+    font-size: 15px;
+    color: #222;
+    background: #f5f5f7;
+}
+
+header {
+    background: #4a6fa5;
+    color: #fff;
+    padding: 8px 12px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+header .brand {
+    font-weight: bold;
+    font-size: 17px;
+    color: #fff;
+    text-decoration: none;
+    margin-right: 8px;
+}
+
+header nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    flex: 1;
+}
+
+header nav a {
+    color: #fff;
+    text-decoration: none;
+    padding: 6px 10px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.15);
+    font-size: 14px;
+}
+
+header nav a:hover { background: rgba(255, 255, 255, 0.3); }
+
+.logout-form button {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    color: #fff;
+    padding: 6px 10px;
+    border-radius: 4px;
+}
+
+main { padding: 12px; }
+
+h1 { font-size: 20px; margin: 0 0 12px; }
+h2 { font-size: 17px; margin: 16px 0 8px; }
+
+/* 籠カード */
+.cage-groups { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start; }
+
+.cage-group {
+    border: 1px solid #c9c9d1;
+    border-radius: 6px;
+    background: #fff;
+    padding: 8px;
+    flex: 1 1 460px;
+}
+
+.cage-group > .group-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-weight: bold;
+    margin-bottom: 8px;
+    gap: 6px;
+}
+
+.cage-group .group-header form { display: inline; }
+
+.cage-cards { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.cage-card {
+    border: 1px solid #c9c9d1;
+    border-radius: 6px;
+    background: #fff;
+    padding: 6px 8px;
+    width: 210px;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+
+.cage-card:hover { background: #eef3fa; }
+
+.cage-card .cage-name { font-weight: bold; font-size: 14px; }
+.cage-card .cage-sub { font-size: 12px; color: #666; }
+.cage-card table { width: 100%; border-collapse: collapse; margin-top: 4px; font-size: 12px; }
+.cage-card td { padding: 2px 3px; border-bottom: 1px solid #eee; }
+.cage-card .more { font-size: 12px; color: #4a6fa5; }
+.cage-card .empty { font-size: 12px; color: #999; margin-top: 4px; }
+
+/* 表 */
+table.list { width: 100%; border-collapse: collapse; background: #fff; }
+table.list th, table.list td { border: 1px solid #ddd; padding: 6px 8px; text-align: left; font-size: 14px; }
+table.list th { background: #eceff4; }
+table.list tr.full { background: #ffe8e8; }
+
+/* フォーム */
+form.stack { background: #fff; border: 1px solid #ddd; border-radius: 6px; padding: 12px; max-width: 560px; }
+form.stack label { display: block; margin-top: 10px; font-size: 14px; font-weight: bold; }
+form.stack input[type=text], form.stack input[type=password], form.stack input[type=date],
+form.stack input[type=number], form.stack select, form.stack textarea {
+    width: 100%; padding: 8px; font-size: 15px; border: 1px solid #bbb; border-radius: 4px; margin-top: 4px;
+}
+form.stack .hint { font-size: 12px; color: #666; font-weight: normal; margin-top: 2px; }
+form.stack .checkbox { display: flex; align-items: center; gap: 6px; margin-top: 10px; font-weight: bold; }
+form.stack .checkbox input { width: auto; }
+
+button, .button {
+    background: #4a6fa5;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: 9px 14px;
+    font-size: 14px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+}
+button.secondary, .button.secondary { background: #77808d; }
+button.danger, .button.danger { background: #b44; }
+button.small, .button.small { padding: 4px 8px; font-size: 12px; }
+
+.actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+
+.message { background: #e6f4ea; border: 1px solid #9ad0ab; padding: 8px 10px; border-radius: 4px; }
+.error { background: #fdecec; border: 1px solid #e2a3a3; padding: 8px 10px; border-radius: 4px; }
+
+/* ログイン画面 */
+.login-body { display: flex; align-items: center; justify-content: center; height: 100vh; }
+.login-box { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 24px; width: 300px; text-align: center; }
+.login-box h1 { font-size: 20px; }
+.login-box label { display: block; text-align: left; margin-top: 12px; font-size: 14px; }
+.login-box input { width: 100%; padding: 10px; font-size: 16px; border: 1px solid #bbb; border-radius: 4px; margin-top: 4px; }
+.login-box button { width: 100%; margin-top: 16px; padding: 10px; font-size: 16px; }
+
+@media (max-width: 640px) {
+    .cage-group { flex: 1 1 100%; }
+    .cage-card { width: 100%; }
+}

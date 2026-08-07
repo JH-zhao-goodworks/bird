@@ -1,0 +1,43 @@
+@page
+@model BirdHotel.Web.Pages.Reservations.IndexModel
+@{
+    ViewData["Title"] = "予約一覧";
+}
+
+<h1>予約一覧（@Model.Reservations.Count 件）</h1>
+
+<div class="actions">
+    <a class="button" asp-page="/Reservations/Create">予約を登録</a>
+    <a class="button secondary" asp-page="/Reservations/BulkImport">一括登録</a>
+    <a class="button secondary" asp-page="/Reservations/Export">Excel出力</a>
+</div>
+
+<table class="list">
+    <tr>
+        <th>鳥</th>
+        <th>飼い主</th>
+        <th>籠</th>
+        <th>開始日</th>
+        <th>終了日</th>
+        <th>合計</th>
+        <th></th>
+    </tr>
+    @foreach (var reservation in Model.Reservations)
+    {
+        <tr>
+            <td>@reservation.BirdName</td>
+            <td>@reservation.OwnerName</td>
+            <td><a asp-page="/Cages/Detail" asp-route-id="@reservation.CageId">@reservation.CageName</a></td>
+            <td>@(reservation.IsIndefinite ? "無期限" : reservation.StartDate.ToString("yyyy/MM/dd"))</td>
+            <td>@(reservation.IsIndefinite ? "無期限" : reservation.EndDate!.Value.ToString("yyyy/MM/dd"))</td>
+            <td>@(reservation.IsIndefinite ? "無期限" : $"{(reservation.EndDate!.Value - reservation.StartDate).Days}日間")</td>
+            <td>
+                <a class="button secondary small" asp-page="/Reservations/Edit" asp-route-id="@reservation.Id">編集</a>
+                <form method="post" asp-page-handler="Delete" asp-route-id="@reservation.Id" style="display:inline"
+                      onsubmit="return confirm('この予約を取り消しますか？');">
+                    <button type="submit" class="danger small">取消</button>
+                </form>
+            </td>
+        </tr>
+    }
+</table>

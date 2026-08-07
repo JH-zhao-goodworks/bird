@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: bird-hotel
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    envVars:
+      # Neon などで作った PostgreSQL の接続文字列（postgres://... 形式でも可）
+      - key: DATABASE_URL
+        sync: false
+      # 店舗で共有するログイン用の合言葉
+      - key: APP_PASSWORD
+        sync: false

@@ -1,0 +1,61 @@
+@page
+@model BirdHotel.Web.Pages.Birds.IndexModel
+@{
+    ViewData["Title"] = "鳥の管理";
+}
+
+<h1>鳥の管理</h1>
+
+<div class="actions">
+    <a class="button" asp-page="/Birds/Edit">新規登録</a>
+    <a class="button secondary" asp-page="/Birds/BulkImport">一括登録</a>
+    <a class="button secondary" asp-page="/Owners/Index">飼い主の管理</a>
+    <a class="button secondary" asp-page="/Species/Index">種類の管理</a>
+</div>
+
+<form method="get" class="actions">
+    <label>飼い主で絞り込み</label>
+    <select name="OwnerFilter" onchange="this.form.submit()">
+        <option value="">（すべて）</option>
+        @foreach (var owner in Model.Owners)
+        {
+            <option value="@owner.Id" selected="@(Model.OwnerFilter == owner.Id)">@owner.Name</option>
+        }
+    </select>
+    <noscript><button type="submit" class="secondary">絞り込む</button></noscript>
+</form>
+
+<p class="hint">同じペア名の鳥はまとめて表示されます。名前をタップすると詳細・編集ができます。</p>
+
+<div class="cage-groups">
+    @foreach (var group in Model.Groups)
+    {
+        <section class="cage-group" style="flex: 1 1 320px;">
+            <div class="group-header">
+                <span>ペア名: @group.Label</span>
+            </div>
+            <table class="list">
+                <tr>
+                    <th>名前</th>
+                    <th>ペア</th>
+                    <th>飼い主</th>
+                    <th></th>
+                </tr>
+                @foreach (var bird in group.Birds)
+                {
+                    <tr>
+                        <td><a asp-page="/Birds/Edit" asp-route-id="@bird.Id">@bird.Name</a></td>
+                        <td>@(bird.CanPair ? "可" : "不可")</td>
+                        <td>@bird.OwnerName</td>
+                        <td>
+                            <form method="post" asp-page-handler="Delete" asp-route-id="@bird.Id"
+                                  onsubmit="return confirm('この鳥を削除しますか？関連する予約も削除されます。');">
+                                <button type="submit" class="danger small">削除</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </table>
+        </section>
+    }
+</div>

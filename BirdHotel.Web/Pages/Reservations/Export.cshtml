@@ -1,0 +1,16 @@
+@page
+@model BirdHotel.Web.Pages.Reservations.ExportModel
+@{
+    ViewData["Title"] = "Excel出力";
+}
+
+<h1>Excel出力</h1>
+
+<p>
+    予約が入っている鳥を、籠に関係なくすべて出力します（現在 @Model.ReservationCount 件）。<br />
+    列の順番: 鳥名前 / 種類 / 飼い主 / ペア可否 / ペア名 / 開始日 / 終了日
+</p>
+
+<form method="post" asp-page-handler="Download">
+    <button type="submit">Excelファイルをダウンロード</button>
+</form>

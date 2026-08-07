@@ -1,0 +1,68 @@
+@page "{id:int?}"
+@using BirdHotel.Web.Models
+@model BirdHotel.Web.Pages.Birds.EditModel
+@{
+    ViewData["Title"] = Model.Input.Id == 0 ? "鳥の新規登録" : "鳥の編集";
+}
+
+<h1>@ViewData["Title"]</h1>
+
+<form method="post" class="stack">
+    <input type="hidden" asp-for="Input.Id" />
+
+    <label>名前</label>
+    <input type="text" asp-for="Input.Name" />
+
+    <label>種類</label>
+    <select asp-for="Input.Species">
+        <option value="">（選んでください）</option>
+        @foreach (var species in Model.SpeciesList)
+        {
+            <option value="@species.Name">@species.Name</option>
+        }
+    </select>
+    <div class="hint">一覧にない種類は<a asp-page="/Species/Index">種類の管理</a>から追加できます。</div>
+
+    <label>飼い主</label>
+    <select asp-for="Input.OwnerId">
+        <option value="">（選んでください）</option>
+        @foreach (var owner in Model.Owners)
+        {
+            <option value="@owner.Id">@owner.Name@(owner.IsProprietor ? "（経営者）" : "")</option>
+        }
+    </select>
+    <div class="hint">一覧にない飼い主は<a asp-page="/Owners/Index">飼い主の管理</a>から追加できます。</div>
+
+    <label>生年月日（不明なら空欄）</label>
+    <input type="date" asp-for="BirthDateText" />
+
+    <label>型</label>
+    <select asp-for="Input.Size">
+        <option value="@BirdSize.中小型">中小型</option>
+        <option value="@BirdSize.中大型">中大型</option>
+    </select>
+
+    <label>性別</label>
+    <select asp-for="Input.Gender">
+        <option value="@BirdGender.オス">オス</option>
+        <option value="@BirdGender.メス">メス</option>
+        <option value="@BirdGender.不明">不明</option>
+    </select>
+
+    <div class="checkbox">
+        <input type="checkbox" asp-for="Input.CanPair" />
+        <span>他の鳥と同じ籠に入れてよい（ペア可）</span>
+    </div>
+
+    <label>ペア名</label>
+    <input type="text" asp-for="Input.PairName" />
+    <div class="hint">同じ籠に入れる鳥同士に同じ名前を付けてください（例: セキセイ家族）。</div>
+
+    <label>備考</label>
+    <input type="text" asp-for="Input.Notes" />
+
+    <div class="actions">
+        <button type="submit">保存する</button>
+        <a class="button secondary" asp-page="/Birds/Index">一覧へ戻る</a>
+    </div>
+</form>

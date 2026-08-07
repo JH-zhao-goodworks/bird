@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"] - 小鳥ホテル予約システム</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    <header>
+        <a class="brand" asp-page="/Index">小鳥ホテル</a>
+        <nav>
+            <a asp-page="/Index">籠一覧</a>
+            <a asp-page="/Birds/Index">鳥</a>
+            <a asp-page="/Owners/Index">飼い主</a>
+            <a asp-page="/Cages/Index">籠</a>
+            <a asp-page="/Reservations/Index">予約</a>
+            <a asp-page="/Reservations/BulkImport">一括登録</a>
+        </nav>
+        <form method="post" asp-page="/Login" asp-page-handler="Logout" class="logout-form">
+            <button type="submit">ログアウト</button>
+        </form>
+    </header>
+
+    <main>
+        @if (TempData["Message"] is string message)
+        {
+            <p class="message">@message</p>
+        }
+        @if (TempData["Error"] is string error)
+        {
+            <p class="error">@error</p>
+        }
+        @RenderBody()
+    </main>
+</body>
+</html>

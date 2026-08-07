@@ -1,0 +1,27 @@
+@page
+@model BirdHotel.Web.Pages.LoginModel
+@{
+    ViewData["Title"] = "ログイン";
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>小鳥ホテル予約システム - ログイン</title>
+    <link rel="stylesheet" href="~/css/site.css" />
+</head>
+<body class="login-body">
+    <form method="post" class="login-box">
+        <h1>小鳥ホテル<br />予約システム</h1>
+        @if (Model.ErrorMessage is not null)
+        {
+            <p class="error">@Model.ErrorMessage</p>
+        }
+        <label for="password">合言葉</label>
+        <input type="password" id="password" name="Password" autocomplete="current-password" autofocus />
+        <button type="submit">ログイン</button>
+    </form>
+</body>
+</html>

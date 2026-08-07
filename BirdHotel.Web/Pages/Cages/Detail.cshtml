@@ -1,0 +1,76 @@
+@page "{id:int}"
+@using BirdHotel.Web.Models
+@model BirdHotel.Web.Pages.Cages.DetailModel
+@{
+    ViewData["Title"] = $"{Model.Cage.Name} の詳細";
+    var typeText = Model.Cage.Type == CageType.通常籠 ? "" : $"［{Model.Cage.Type}］";
+    var specialText = Model.MaxConcurrent > Model.Cage.Capacity ? $"（特{Model.MaxConcurrent}）" : "";
+}
+
+<h1>@Model.Cage.Name @typeText @specialText</h1>
+<p>定員 @Model.Cage.Capacity 羽　予約 @Model.Rows.Count 件　グループ: @(Model.Cage.GroupName.Length > 0 ? Model.Cage.GroupName : "なし")</p>
+
+<div class="actions">
+    <a class="button" asp-page="/Reservations/Create" asp-route-cageId="@Model.Cage.Id">この籠に鳥を登録</a>
+    <a class="button secondary" asp-page="/Cages/Index" asp-route-editId="@Model.Cage.Id">籠を編集</a>
+    <form method="post" asp-page-handler="Clear" asp-route-id="@Model.Cage.Id"
+          onsubmit="return confirm('この籠の予約をすべて取り消します。よろしいですか？');">
+        <button type="submit" class="danger">クリア</button>
+    </form>
+    <a class="button secondary" asp-page="/Index">籠一覧へ戻る</a>
+</div>
+
+@if (Model.Rows.Count == 0)
+{
+    <p>この籠には予約がありません。</p>
+}
+else
+{
+    <form method="post" asp-page-handler="Move" asp-route-id="@Model.Cage.Id">
+        <table class="list">
+            <tr>
+                <th>移動</th>
+                <th>名前</th>
+                <th>種類</th>
+                <th>飼い主</th>
+                <th>ペア名</th>
+                <th>開始日</th>
+                <th>終了日</th>
+                <th>合計</th>
+                <th></th>
+            </tr>
+            @foreach (var row in Model.Rows)
+            {
+                var reservation = row.Reservation;
+                <tr>
+                    <td><input type="checkbox" name="reservationIds" value="@reservation.Id" /></td>
+                    <td>@reservation.BirdName</td>
+                    <td>@(row.Bird?.Species ?? "")</td>
+                    <td>@reservation.OwnerName</td>
+                    <td>@(row.Bird is { CanPair: true } b && b.PairName.Length > 0 ? b.PairName : "X")</td>
+                    <td>@(reservation.IsIndefinite ? "無期限" : reservation.StartDate.ToString("yyyy/MM/dd"))</td>
+                    <td>@(reservation.IsIndefinite ? "無期限" : reservation.EndDate!.Value.ToString("yyyy/MM/dd"))</td>
+                    <td>@(reservation.IsIndefinite ? "無期限" : $"{(reservation.EndDate!.Value - reservation.StartDate).Days}日間")</td>
+                    <td>
+                        <a class="button secondary small" asp-page="/Reservations/Edit" asp-route-id="@reservation.Id">編集</a>
+                    </td>
+                </tr>
+            }
+        </table>
+
+        @if (Model.OtherCages.Count > 0)
+        {
+            <div class="actions">
+                <label>移動先の籠</label>
+                <select name="destinationCageId">
+                    @foreach (var cage in Model.OtherCages)
+                    {
+                        <option value="@cage.Id">@cage.Name</option>
+                    }
+                </select>
+                <button type="submit" class="secondary">チェックした鳥を移動</button>
+            </div>
+            <p class="hint">期間が重なる場合は移動できません（無期限の予約は重複として数えません）。</p>
+        }
+    </form>
+}

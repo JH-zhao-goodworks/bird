@@ -1,0 +1,87 @@
+@page
+@using BirdHotel.Web.Models
+@model BirdHotel.Web.Pages.IndexModel
+@{
+    ViewData["Title"] = "籠一覧";
+}
+
+<h1>籠一覧</h1>
+
+<div class="actions">
+    <a class="button" asp-page="/Reservations/Create">予約を登録</a>
+    <a class="button secondary" asp-page="/Reservations/BulkImport">予約の一括登録</a>
+    <a class="button secondary" asp-page="/Reservations/Export">Excel出力</a>
+    <form method="post" asp-page-handler="ClearAll" onsubmit="return confirm('すべての籠の予約を取り消します。よろしいですか？（元に戻せません）');">
+        <button type="submit" class="danger">全籠クリア</button>
+    </form>
+</div>
+
+@if (Model.Groups.Count == 0)
+{
+    <p>籠がまだ登録されていません。<a asp-page="/Cages/Index">籠の管理</a>から登録してください。</p>
+}
+
+<div class="cage-groups">
+    @foreach (var group in Model.Groups)
+    {
+        <section class="cage-group">
+            <div class="group-header">
+                <span>@group.Label</span>
+                <span>
+                    <form method="post" asp-page-handler="MoveGroup">
+                        <input type="hidden" name="groupKey" value="@group.Key" />
+                        <input type="hidden" name="direction" value="-1" />
+                        <button type="submit" class="secondary small">◀</button>
+                    </form>
+                    <form method="post" asp-page-handler="MoveGroup">
+                        <input type="hidden" name="groupKey" value="@group.Key" />
+                        <input type="hidden" name="direction" value="1" />
+                        <button type="submit" class="secondary small">▶</button>
+                    </form>
+                </span>
+            </div>
+
+            <div class="cage-cards">
+                @foreach (var card in group.Cards)
+                {
+                    var typeText = card.Cage.Type switch
+                    {
+                        CageType.経営者籠 => " [経]",
+                        CageType.持ち込み籠 => " [持]",
+                        _ => "",
+                    };
+                    var specialText = card.MaxConcurrent > card.Cage.Capacity ? $"（特{card.MaxConcurrent}）" : "";
+
+                    <a class="cage-card" asp-page="/Cages/Detail" asp-route-id="@card.Cage.Id">
+                        <div class="cage-name">@card.Cage.Name @typeText @specialText</div>
+                        <div class="cage-sub">定員@(card.Cage.Capacity)　予約@(card.Reservations.Count)件</div>
+                        @if (card.Reservations.Count == 0)
+                        {
+                            <div class="empty">（空き）</div>
+                        }
+                        else
+                        {
+                            <table>
+                                @foreach (var reservation in card.Reservations.Take(3))
+                                {
+                                    <tr>
+                                        <td>@reservation.BirdName</td>
+                                        <td>
+                                            @(reservation.IsIndefinite
+                                                ? "無期限"
+                                                : $"{reservation.StartDate:MM/dd}〜{reservation.EndDate!.Value:MM/dd}")
+                                        </td>
+                                    </tr>
+                                }
+                            </table>
+                            @if (card.Reservations.Count > 3)
+                            {
+                                <div class="more">ほか@(card.Reservations.Count - 3)件（タップで全件）</div>
+                            }
+                        }
+                    </a>
+                }
+            </div>
+        </section>
+    }
+</div>

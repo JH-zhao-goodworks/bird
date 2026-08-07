@@ -1,0 +1,52 @@
+@page
+@model BirdHotel.Web.Pages.Birds.BulkImportModel
+@{
+    ViewData["Title"] = "鳥の一括登録";
+}
+
+<h1>鳥の一括登録</h1>
+
+<p class="hint">
+    1行1羽で「種類, 名前, 飼い主, ペア, ペア名」の順に貼り付けてください（タブ区切り・カンマ区切り対応）。<br />
+    「ペア」は他の鳥と同じ籠に入れてよいかで「可」または「不可」を入力します（空欄の場合はペア名の有無で判断します）。<br />
+    まだ登録されていない種類・飼い主は自動的に新規登録されます。型は中小型、性別は不明として登録されます。<br />
+    名前と飼い主が同じ鳥が既に登録済みの場合は二重登録せず、ペアが不可から可に変わる場合だけ更新します。
+</p>
+
+<form method="post" class="stack" style="max-width: 100%;">
+    <label>貼り付け欄</label>
+    <textarea asp-for="InputText" rows="8"></textarea>
+    <div class="actions">
+        <button type="submit" asp-page-handler="Preview" class="secondary">解析してプレビュー</button>
+        @if (Model.Rows.Any(r => !r.HasError))
+        {
+            <button type="submit" asp-page-handler="Register">この内容で登録</button>
+        }
+    </div>
+</form>
+
+@if (Model.Rows.Count > 0)
+{
+    <h2>プレビュー（@Model.Rows.Count 件中 登録可能 @Model.Rows.Count(r => !r.HasError) 件）</h2>
+    <table class="list">
+        <tr>
+            <th>種類</th>
+            <th>名前</th>
+            <th>飼い主</th>
+            <th>ペア</th>
+            <th>ペア名</th>
+            <th>状態</th>
+        </tr>
+        @foreach (var row in Model.Rows)
+        {
+            <tr class="@(row.HasError ? "full" : "")">
+                <td>@row.Species</td>
+                <td>@row.Name</td>
+                <td>@row.Owner</td>
+                <td>@(row.CanPair ? "可" : "不可")</td>
+                <td>@(row.CanPair && row.PairName.Length > 0 ? row.PairName : "X")</td>
+                <td>@row.Status</td>
+            </tr>
+        }
+    </table>
+}

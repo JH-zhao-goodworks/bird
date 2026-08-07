@@ -1,0 +1,44 @@
+@page "{id:int}"
+@model BirdHotel.Web.Pages.Reservations.EditModel
+@{
+    ViewData["Title"] = "予約の編集";
+}
+
+<h1>予約の編集（@Model.BirdName）</h1>
+
+<form method="post" class="stack">
+    <input type="hidden" asp-for="Id" />
+
+    <label>籠</label>
+    <select asp-for="CageId">
+        @foreach (var cage in Model.Cages)
+        {
+            <option value="@cage.Id">@cage.Name</option>
+        }
+    </select>
+
+    <label>開始日</label>
+    <input type="date" asp-for="StartDate" />
+
+    <label>終了日</label>
+    <input type="date" asp-for="EndDate" />
+    <div class="checkbox">
+        <input type="checkbox" asp-for="Indefinite" />
+        <span>期間なし</span>
+    </div>
+
+    <label>備考</label>
+    <input type="text" asp-for="Notes" />
+
+    <div class="checkbox">
+        <input type="checkbox" asp-for="OverrideCapacity" />
+        <span>定員を超えても登録する（特別対応）</span>
+    </div>
+
+    <div class="actions">
+        <button type="submit">保存する</button>
+        <button type="submit" asp-page-handler="Delete" class="danger"
+                onclick="return confirm('この予約を取り消しますか？');">取消</button>
+        <a class="button secondary" asp-page="/Reservations/Index">一覧へ戻る</a>
+    </div>
+</form>

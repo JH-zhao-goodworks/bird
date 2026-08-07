@@ -1,0 +1,60 @@
+@page
+@model BirdHotel.Web.Pages.Species.IndexModel
+@{
+    ViewData["Title"] = "種類の管理";
+}
+
+<h1>種類の管理</h1>
+
+<form method="post" asp-page-handler="Save" class="stack">
+    <input type="hidden" asp-for="Input.Id" />
+    <label>種類名</label>
+    <input type="text" asp-for="Input.Name" />
+    <div class="actions">
+        <button type="submit">@(Model.Input.Id == 0 ? "登録する" : "更新する")</button>
+        @if (Model.Input.Id != 0)
+        {
+            <a class="button secondary" asp-page="/Species/Index">新規入力に戻す</a>
+        }
+    </div>
+</form>
+
+<h2>登録済みの種類（@Model.Rows.Count 件）</h2>
+
+<form method="post" asp-page-handler="Merge" onsubmit="return confirm('選んだ種類を統合します。よろしいですか？（元に戻せません）');">
+    <table class="list">
+        <tr>
+            <th>統合</th>
+            <th>種類名</th>
+            <th>鳥</th>
+            <th></th>
+        </tr>
+        @foreach (var row in Model.Rows)
+        {
+            <tr>
+                <td><input type="checkbox" name="sourceIds" value="@row.Species.Id" /></td>
+                <td>@row.Species.Name</td>
+                <td>@row.BirdCount 羽</td>
+                <td>
+                    <a class="button secondary small" asp-page="/Species/Index" asp-route-editId="@row.Species.Id">編集</a>
+                    <button type="submit" class="danger small" asp-page-handler="Delete" asp-route-id="@row.Species.Id"
+                            formnovalidate onclick="return confirm('削除しますか？');">削除</button>
+                </td>
+            </tr>
+        }
+    </table>
+
+    @if (Model.Rows.Count > 1)
+    {
+        <div class="actions">
+            <label>統合先（残す種類）</label>
+            <select name="targetId">
+                @foreach (var row in Model.Rows)
+                {
+                    <option value="@row.Species.Id">@row.Species.Name</option>
+                }
+            </select>
+            <button type="submit" class="secondary">チェックした種類を統合</button>
+        </div>
+    }
+</form>

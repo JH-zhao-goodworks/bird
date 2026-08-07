@@ -1,0 +1,75 @@
+@page
+@using BirdHotel.Web.Models
+@model BirdHotel.Web.Pages.Cages.IndexModel
+@{
+    ViewData["Title"] = "籠の管理";
+}
+
+<h1>籠の管理</h1>
+
+<form method="post" asp-page-handler="Save" class="stack">
+    <input type="hidden" asp-for="Input.Id" />
+    <label>籠名</label>
+    <input type="text" asp-for="Input.Name" />
+
+    <label>定員</label>
+    <input type="number" asp-for="Input.Capacity" min="1" max="20" />
+    <div class="hint">通常は2羽。特別に3羽以上入れる籠だけ変更してください。</div>
+
+    <label>種別</label>
+    <select asp-for="Input.Type">
+        <option value="@CageType.通常籠">通常籠</option>
+        <option value="@CageType.経営者籠">経営者籠</option>
+        <option value="@CageType.持ち込み籠">持ち込み籠</option>
+    </select>
+    <div class="hint">経営者籠・持ち込み籠は決まった鳥専用のため、一括予約登録の自動配属では使われません。</div>
+
+    <label>グループ</label>
+    <input type="text" asp-for="Input.GroupName" list="group-names" />
+    <datalist id="group-names">
+        @foreach (var groupName in Model.GroupNames)
+        {
+            <option value="@groupName"></option>
+        }
+    </datalist>
+    <div class="hint">同じグループ名の籠は、籠一覧でまとめて表示されます。空欄なら「グループなし」になります。</div>
+
+    <label>備考</label>
+    <input type="text" asp-for="Input.Notes" />
+
+    <div class="actions">
+        <button type="submit">@(Model.Input.Id == 0 ? "登録する" : "更新する")</button>
+        @if (Model.Input.Id != 0)
+        {
+            <a class="button secondary" asp-page="/Cages/Index">新規入力に戻す</a>
+        }
+    </div>
+</form>
+
+<h2>登録済みの籠（@Model.Cages.Count 件）</h2>
+
+<table class="list">
+    <tr>
+        <th>籠名</th>
+        <th>定員</th>
+        <th>種別</th>
+        <th>グループ</th>
+        <th></th>
+    </tr>
+    @foreach (var cage in Model.Cages)
+    {
+        <tr>
+            <td><a asp-page="/Cages/Detail" asp-route-id="@cage.Id">@cage.Name</a></td>
+            <td>@cage.Capacity</td>
+            <td>@cage.Type</td>
+            <td>@cage.GroupName</td>
+            <td>
+                <a class="button secondary small" asp-page="/Cages/Index" asp-route-editId="@cage.Id">編集</a>
+                <form method="post" asp-page-handler="Delete" asp-route-id="@cage.Id" style="display:inline"
+                      onsubmit="return confirm('この籠を削除しますか？関連する予約も削除されます。');">
+                    <button type="submit" class="danger small">削除</button>
+                </form>
+            </td>
+        </tr>
+    }
+</table>

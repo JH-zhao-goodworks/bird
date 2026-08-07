@@ -1,0 +1,78 @@
+@page
+@model BirdHotel.Web.Pages.Owners.IndexModel
+@{
+    ViewData["Title"] = "飼い主の管理";
+}
+
+<h1>飼い主の管理</h1>
+
+<form method="post" asp-page-handler="Save" class="stack">
+    <input type="hidden" asp-for="Input.Id" />
+    <label>飼い主名</label>
+    <input type="text" asp-for="Input.Name" />
+
+    <label>連絡先</label>
+    <input type="text" asp-for="Input.Contact" />
+
+    <div class="checkbox">
+        <input type="checkbox" asp-for="Input.IsProprietor" />
+        <span>経営者本人（この飼い主の鳥は予約時に自動で「期間なし」になります）</span>
+    </div>
+
+    <label>備考</label>
+    <input type="text" asp-for="Input.Notes" />
+
+    <div class="actions">
+        <button type="submit">@(Model.Input.Id == 0 ? "登録する" : "更新する")</button>
+        @if (Model.Input.Id != 0)
+        {
+            <a class="button secondary" asp-page="/Owners/Index">新規入力に戻す</a>
+        }
+    </div>
+</form>
+
+<h2>登録済みの飼い主（@Model.Rows.Count 件）</h2>
+
+<form method="post" asp-page-handler="Merge" onsubmit="return confirm('選んだ飼い主を統合します。よろしいですか？（元に戻せません）');">
+    <table class="list">
+        <tr>
+            <th>統合</th>
+            <th>飼い主名</th>
+            <th>連絡先</th>
+            <th>経営者本人</th>
+            <th>鳥</th>
+            <th></th>
+        </tr>
+        @foreach (var row in Model.Rows)
+        {
+            <tr>
+                <td>
+                    <input type="checkbox" name="sourceIds" value="@row.Owner.Id" />
+                </td>
+                <td>@row.Owner.Name</td>
+                <td>@row.Owner.Contact</td>
+                <td>@(row.Owner.IsProprietor ? "○" : "")</td>
+                <td>@row.BirdCount 羽</td>
+                <td>
+                    <a class="button secondary small" asp-page="/Owners/Index" asp-route-editId="@row.Owner.Id">編集</a>
+                    <button type="submit" class="danger small" asp-page-handler="Delete" asp-route-id="@row.Owner.Id"
+                            formnovalidate onclick="return confirm('削除しますか？');">削除</button>
+                </td>
+            </tr>
+        }
+    </table>
+
+    @if (Model.Rows.Count > 1)
+    {
+        <div class="actions">
+            <label>統合先（残す飼い主）</label>
+            <select name="targetId">
+                @foreach (var row in Model.Rows)
+                {
+                    <option value="@row.Owner.Id">@row.Owner.Name</option>
+                }
+            </select>
+            <button type="submit" class="secondary">チェックした飼い主を統合</button>
+        </div>
+    }
+</form>

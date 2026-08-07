@@ -1,0 +1,86 @@
+@page
+@model BirdHotel.Web.Pages.Reservations.CreateModel
+@{
+    ViewData["Title"] = "予約の登録";
+}
+
+<h1>予約の登録</h1>
+
+<form method="get" class="actions">
+    <label>飼い主で絞り込み</label>
+    <select name="OwnerFilter" onchange="this.form.submit()">
+        <option value="">（すべて）</option>
+        @foreach (var owner in Model.Owners)
+        {
+            <option value="@owner.Id" selected="@(Model.OwnerFilter == owner.Id)">@owner.Name</option>
+        }
+    </select>
+    <noscript><button type="submit" class="secondary">絞り込む</button></noscript>
+</form>
+
+<form method="post" class="stack" style="max-width: 100%;">
+    <label>鳥（複数選択できます。ペアは一緒に選んでください）</label>
+    <div style="max-height: 220px; overflow-y: auto; border: 1px solid #ccc; border-radius: 4px; padding: 6px; background: #fff;">
+        @if (Model.Birds.Count == 0)
+        {
+            <p>鳥が登録されていません。<a asp-page="/Birds/Edit">鳥の登録</a>から追加してください。</p>
+        }
+        @foreach (var bird in Model.Birds)
+        {
+            <div class="checkbox" style="margin-top: 4px; font-weight: normal;">
+                <input type="checkbox" name="BirdIds" value="@bird.Id"
+                       checked="@(Model.BirdIds.Contains(bird.Id))" />
+                <span>@bird.Name（@bird.Species・@bird.OwnerName@(bird.CanPair && bird.PairName.Length > 0 ? $"・{bird.PairName}" : "")）</span>
+            </div>
+        }
+    </div>
+
+    <label>開始日</label>
+    <input type="date" asp-for="StartDate" />
+
+    <label>終了日</label>
+    <input type="date" asp-for="EndDate" />
+    <div class="checkbox">
+        <input type="checkbox" asp-for="Indefinite" />
+        <span>期間なし（経営者の鳥など、退室日未定）</span>
+    </div>
+
+    <label>備考</label>
+    <input type="text" asp-for="Notes" />
+
+    <div class="checkbox">
+        <input type="checkbox" asp-for="OverrideCapacity" />
+        <span>定員を超えても登録する（特別対応）</span>
+    </div>
+
+    <div class="actions">
+        <button type="submit" asp-page-handler="Search" class="secondary">空き籠を確認</button>
+    </div>
+
+    <h2>籠の空き状況</h2>
+    <table class="list">
+        <tr>
+            <th>籠</th>
+            <th>定員</th>
+            <th>予定在籠数</th>
+            <th>空き</th>
+            <th>優先</th>
+            <th></th>
+        </tr>
+        @foreach (var availability in Model.Availabilities)
+        {
+            <tr class="@(availability.Remaining <= 0 ? "full" : "")">
+                <td>@availability.Cage.Name</td>
+                <td>@availability.Cage.Capacity</td>
+                <td>@availability.Occupied</td>
+                <td>@availability.Remaining</td>
+                <td>@availability.Note</td>
+                <td>
+                    <button type="submit" asp-page-handler="Register" asp-route-cageId="@availability.Cage.Id" class="small">
+                        この籠に登録
+                    </button>
+                </td>
+            </tr>
+        }
+    </table>
+</form>
