@@ -4,13 +4,14 @@ obj/
 publish-framework-dependent/
 release/
 
-# 実際の予約データ（飼い主の情報を含むので共有しない）
-data/
-
 # Visual Studio / Rider などの作業ファイル
 .vs/
 .idea/
 *.user
 *.suo
 
-# BirdHotel.App/publish の単体exeは、新しいPCですぐ使えるように追跡する
+# データ（リポジトリ直下の data\bird_hotel.db）は、
+# ダウンロードしてすぐ使えるように、あえてリポジトリに含めている。
+# exeフォルダの中にできる data は、直下のものと二重になるため除外する。
+BirdHotel.App/publish/data/
+BirdHotel.Web/data/

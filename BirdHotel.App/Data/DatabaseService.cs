@@ -20,18 +20,32 @@ public class DatabaseService
         Initialize();
     }
 
-    // exeと同じ場所の data フォルダに置く（持ち運べるようにするため）。
-    // 書き込めない場所（Program Files 配下など）に置かれた場合は、従来の %LOCALAPPDATA% を使う。
+    // データは data フォルダの bird_hotel.db に置く（フォルダごとコピーすれば持ち運べる）。
+    // 上位フォルダに data\bird_hotel.db があればそれを使うので、
+    // publish と publish-framework-dependent のどちらから起動しても同じデータを見る。
     private static string ResolveDatabasePath()
     {
-        var portableDir = Path.Combine(AppContext.BaseDirectory, "data");
+        const string fileName = "bird_hotel.db";
+
+        // 既にあるデータベースを、exeの場所から上の階層へ順に探す
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        for (var depth = 0; depth < 5 && directory is not null; depth++)
+        {
+            var candidate = Path.Combine(directory.FullName, "data", fileName);
+            if (File.Exists(candidate))
+                return candidate;
+            directory = directory.Parent;
+        }
+
         var legacyDir = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "BirdHotelReservation");
-        var legacyPath = Path.Combine(legacyDir, "bird_hotel.db");
+        var legacyPath = Path.Combine(legacyDir, fileName);
 
+        // 見つからなければ、exeと同じ場所に作る
         try
         {
+            var portableDir = Path.Combine(AppContext.BaseDirectory, "data");
             Directory.CreateDirectory(portableDir);
 
             // 書き込めるか実際に試す
@@ -39,16 +53,17 @@ public class DatabaseService
             File.WriteAllText(probePath, "");
             File.Delete(probePath);
 
-            var portablePath = Path.Combine(portableDir, "bird_hotel.db");
+            var portablePath = Path.Combine(portableDir, fileName);
 
             // 以前のバージョンで %LOCALAPPDATA% に貯めたデータがあれば引き継ぐ
-            if (!File.Exists(portablePath) && File.Exists(legacyPath))
+            if (File.Exists(legacyPath))
                 File.Copy(legacyPath, portablePath);
 
             return portablePath;
         }
         catch (Exception)
         {
+            // 書き込めない場所（Program Files 配下など）に置かれた場合は従来の場所を使う
             Directory.CreateDirectory(legacyDir);
             return legacyPath;
         }
