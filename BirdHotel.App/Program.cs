@@ -17,6 +17,6 @@ static class Program
         var cageRepository = new CageRepository(db);
         var reservationRepository = new ReservationRepository(db);
 
-        Application.Run(new MainForm(birdRepository, cageRepository, reservationRepository, ownerRepository, speciesRepository));
+        Application.Run(new MainForm(birdRepository, cageRepository, reservationRepository, ownerRepository, speciesRepository, db));
     }
 }

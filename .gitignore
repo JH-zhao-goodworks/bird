@@ -1,12 +1,16 @@
-# ビルド成果物（配布用exeはGitHubのReleasesに添付する）
+# ビルドの途中ファイル（リポジトリには入れない）
 bin/
 obj/
-publish/
 publish-framework-dependent/
 release/
+
+# 実際の予約データ（飼い主の情報を含むので共有しない）
+data/
 
 # Visual Studio / Rider などの作業ファイル
 .vs/
 .idea/
 *.user
 *.suo
+
+# BirdHotel.App/publish の単体exeは、新しいPCですぐ使えるように追跡する

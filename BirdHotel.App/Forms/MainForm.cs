@@ -25,16 +25,18 @@ public class MainForm : Form
     private readonly ReservationRepository _reservationRepository;
     private readonly OwnerRepository _ownerRepository;
     private readonly SpeciesRepository _speciesRepository;
+    private readonly DatabaseService _database;
 
     private FlowLayoutPanel _cardsPanel = null!;
 
-    public MainForm(BirdRepository birdRepository, CageRepository cageRepository, ReservationRepository reservationRepository, OwnerRepository ownerRepository, SpeciesRepository speciesRepository)
+    public MainForm(BirdRepository birdRepository, CageRepository cageRepository, ReservationRepository reservationRepository, OwnerRepository ownerRepository, SpeciesRepository speciesRepository, DatabaseService database)
     {
         _birdRepository = birdRepository;
         _cageRepository = cageRepository;
         _reservationRepository = reservationRepository;
         _ownerRepository = ownerRepository;
         _speciesRepository = speciesRepository;
+        _database = database;
 
         BuildUi();
         RefreshCards();
@@ -74,6 +76,12 @@ public class MainForm : Form
         var exportButton = new Button { Text = "Excel出力", Width = 100, Height = 36 };
         exportButton.Click += (_, _) => ExportReservations();
 
+        var backupButton = new Button { Text = "バックアップ", Width = 110, Height = 36 };
+        backupButton.Click += (_, _) => BackupDatabase();
+
+        var restoreButton = new Button { Text = "復元", Width = 80, Height = 36 };
+        restoreButton.Click += (_, _) => RestoreDatabase();
+
         var clearAllButton = new Button { Text = "全籠クリア", Width = 100, Height = 36, Margin = new Padding(20, 3, 3, 3) };
         clearAllButton.Click += (_, _) => ClearAllCages();
 
@@ -86,6 +94,8 @@ public class MainForm : Form
         topPanel.Controls.Add(reservationButton);
         topPanel.Controls.Add(bulkReservationButton);
         topPanel.Controls.Add(exportButton);
+        topPanel.Controls.Add(backupButton);
+        topPanel.Controls.Add(restoreButton);
         topPanel.Controls.Add(clearAllButton);
         topPanel.Controls.Add(refreshButton);
 
@@ -325,6 +335,55 @@ public class MainForm : Form
         catch (Exception ex)
         {
             MessageBox.Show($"出力に失敗しました。\n{ex.Message}", "Excel出力", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    // データを1つのファイルに保存しておく（PCを変えるとき・万一に備えるとき用）
+    private void BackupDatabase()
+    {
+        using var dialog = new SaveFileDialog
+        {
+            Title = "バックアップの保存先を選んでください",
+            Filter = "小鳥ホテルのデータ (*.db)|*.db",
+            FileName = $"小鳥ホテル_バックアップ_{DateTime.Today:yyyyMMdd}.db",
+        };
+        if (dialog.ShowDialog(this) != DialogResult.OK) return;
+
+        try
+        {
+            File.Copy(_database.DatabasePath, dialog.FileName, overwrite: true);
+            MessageBox.Show($"バックアップを保存しました。\n{dialog.FileName}", "バックアップ", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"保存に失敗しました。\n{ex.Message}", "バックアップ", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    // バックアップしたファイルから元に戻す（今のデータは上書きされる）
+    private void RestoreDatabase()
+    {
+        using var dialog = new OpenFileDialog
+        {
+            Title = "復元するバックアップファイルを選んでください",
+            Filter = "小鳥ホテルのデータ (*.db)|*.db",
+        };
+        if (dialog.ShowDialog(this) != DialogResult.OK) return;
+
+        var confirm = MessageBox.Show(
+            "選んだバックアップの内容で、今のデータを上書きします。よろしいですか？（今のデータは元に戻せません）",
+            "確認", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+        if (confirm != DialogResult.Yes) return;
+
+        try
+        {
+            File.Copy(dialog.FileName, _database.DatabasePath, overwrite: true);
+            MessageBox.Show("復元しました。反映のため、アプリを一度閉じて開き直してください。", "復元", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            RefreshCards();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"復元に失敗しました。\n{ex.Message}", "復元", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 

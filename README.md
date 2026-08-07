@@ -8,24 +8,34 @@ C# WinForms（.NET 10）で作成した、ローカルPCで動く小鳥ホテル
 実行ファイル名はOSやツールでの文字化けを避けるため英数字（`BirdHotelReservation.exe`）にしています。
 ウィンドウ内の表示（タイトルバーや画面）はすべて日本語です。
 
-実行ファイルはリポジトリには含めず、GitHubの **[Releases](https://github.com/JH-zhao-goodworks/bird/releases)** に添付しています。
-そこから `BirdHotelReservation-vX.Y.Z.exe`（自己完結型）または `BirdHotelReservation-vX.Y.Z-framework-dependent.zip`（軽量版）をダウンロードしてください。
-自分でビルドする場合は、下の「開発者向け情報」の publish コマンドを実行すると同じものが作られます。
-
-配布形式は2種類用意しています。
-
-1. **フレームワーク依存版（軽量・推奨。`publish-framework-dependent`）**
-   このPCに既に入っている .NET 10 デスクトップランタイムを使って動く軽量版です。
-   - `BirdHotelReservation.exe` を直接ダブルクリック、または
-   - 同じフォルダの **`起動.bat`** をダブルクリック（`dotnet.exe`経由で起動するため、未署名exeの直接実行がブロックされる環境ではこちらの方が動く可能性があります）
-   フォルダ内のdllファイルは削除しないでください。
-2. **`BirdHotel.App/publish/BirdHotelReservation.exe`（自己完結型・単一ファイル）**
-   .NETランタイムが入っていない別のPCでも動かせるよう、実行に必要な一式を1つのexe（約50MB）にまとめたものです。自己解凍する大きな未署名exeのため、セキュリティソフト（Windows Defenderや会社のEDR）に検疫・ブロックされやすい傾向があります。
+実行ファイルは **`BirdHotel.App/publish/BirdHotelReservation.exe`** です（約53MB、.NETのインストール不要）。
+このexeをダブルクリックするだけで起動します。実行ファイル名は文字化けを避けるため英数字にしていますが、画面はすべて日本語です。
 
 開けない場合は「Windows セキュリティ」→「保護の履歴」でブロック記録がないか確認してください。それでも実行できない場合は、会社のセキュリティポリシー（AppLocker/WDAC等）で未署名アプリの実行自体が制限されている可能性があるため、情報システム部門への確認が必要です。
 
-データベースファイルは `%LOCALAPPDATA%\BirdHotelReservation\bird_hotel.db` に自動作成されます。
-PCを移す場合はこのファイルをコピーすれば予約データも引き継げます。
+## データの保存場所
+
+予約データは **exeと同じ場所の `data` フォルダの中**（`bird_hotel.db`）に保存されます。
+アプリのフォルダごとコピーすれば、データも一緒に持ち運べます。
+
+以前のバージョンで `%LOCALAPPDATA%\BirdHotelReservation` に保存していたデータは、初回起動時に自動でこの場所へ引き継がれます。
+
+## 新しいPCで使うとき（データも引き継ぐ）
+
+**方法1: フォルダごとコピーする（おすすめ・確実）**
+
+1. 今のPCで、アプリのフォルダ（exeと `data` フォルダが入っている場所）をUSBメモリやOneDriveにコピー
+2. 新しいPCにそのフォルダを置く
+3. `BirdHotelReservation.exe` をダブルクリック
+
+**方法2: GitHubからダウンロードして、データだけ移す**
+
+1. 新しいPCで https://github.com/JH-zhao-goodworks/bird を開き、「Code」→「Download ZIP」
+2. 展開して `BirdHotel.App/publish/BirdHotelReservation.exe` を起動
+3. 今のPCのアプリで「バックアップ」ボタンを押してファイルを保存し、そのファイルを新しいPCへ移す
+4. 新しいPCのアプリで「復元」ボタンからそのファイルを選ぶ（アプリを開き直すと反映されます）
+
+なお、**「バックアップ」ボタンは普段の保険としても使えます**。ときどき保存しておけば、PCが壊れてもデータを戻せます。
 
 ## 画面構成
 

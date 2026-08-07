@@ -6,19 +6,52 @@ public class DatabaseService
 {
     private readonly string _connectionString;
 
+    // データベースファイルの場所。フォルダごとコピーすれば別のPCでもデータを引き継げる。
+    public string DatabasePath { get; }
+
     public DatabaseService()
     {
-        var appDataDir = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "BirdHotelReservation");
-        Directory.CreateDirectory(appDataDir);
-        var dbPath = Path.Combine(appDataDir, "bird_hotel.db");
+        DatabasePath = ResolveDatabasePath();
         _connectionString = new SqliteConnectionStringBuilder
         {
-            DataSource = dbPath
+            DataSource = DatabasePath
         }.ToString();
 
         Initialize();
+    }
+
+    // exeと同じ場所の data フォルダに置く（持ち運べるようにするため）。
+    // 書き込めない場所（Program Files 配下など）に置かれた場合は、従来の %LOCALAPPDATA% を使う。
+    private static string ResolveDatabasePath()
+    {
+        var portableDir = Path.Combine(AppContext.BaseDirectory, "data");
+        var legacyDir = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "BirdHotelReservation");
+        var legacyPath = Path.Combine(legacyDir, "bird_hotel.db");
+
+        try
+        {
+            Directory.CreateDirectory(portableDir);
+
+            // 書き込めるか実際に試す
+            var probePath = Path.Combine(portableDir, ".write_test");
+            File.WriteAllText(probePath, "");
+            File.Delete(probePath);
+
+            var portablePath = Path.Combine(portableDir, "bird_hotel.db");
+
+            // 以前のバージョンで %LOCALAPPDATA% に貯めたデータがあれば引き継ぐ
+            if (!File.Exists(portablePath) && File.Exists(legacyPath))
+                File.Copy(legacyPath, portablePath);
+
+            return portablePath;
+        }
+        catch (Exception)
+        {
+            Directory.CreateDirectory(legacyDir);
+            return legacyPath;
+        }
     }
 
     public SqliteConnection OpenConnection()
