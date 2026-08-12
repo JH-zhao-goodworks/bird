@@ -75,9 +75,18 @@ public class ReservationExportService(BirdRepository birdRepository, Reservation
             var members = group.ToList();
             var first = members[0];
 
+            // 経営者自身の鳥は料金の対象外
+            var allProprietor = members.All(m => birdsById.TryGetValue(m.BirdId, out var b) && b.IsProprietorBird);
+            if (allProprietor)
+            {
+                foreach (var member in members)
+                    charges[member.Id] = new Charge("経営者のため計算なし", null);
+                continue;
+            }
+
             if (first.IsIndefinite)
             {
-                // 期間が決まっていないもの（経営者の鳥など）は料金を出さない
+                // 期間が決まっていないものは日数が出せないため料金を出さない
                 foreach (var member in members)
                     charges[member.Id] = new Charge("無期限", null);
                 continue;
