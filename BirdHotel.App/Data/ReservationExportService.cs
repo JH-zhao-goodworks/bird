@@ -23,10 +23,12 @@ public class ReservationExportService
             .ThenBy(r => r.BirdName)
             .ToList();
 
+        var charges = BuildCharges(reservations, birdsById);
+
         using var workbook = new XLWorkbook();
         var sheet = workbook.AddWorksheet("予約一覧");
 
-        string[] headers = ["鳥名前", "種類", "飼い主", "ペア可否", "ペア名", "開始日", "終了日", "日数"];
+        string[] headers = ["鳥名前", "種類", "飼い主", "ペア可否", "ペア名", "開始日", "終了日", "日数", "詳細", "料金"];
         for (var i = 0; i < headers.Length; i++)
         {
             var headerCell = sheet.Cell(1, i + 1);
@@ -54,6 +56,11 @@ public class ReservationExportService
             else
                 sheet.Cell(row, 8).Value = (reservation.EndDate!.Value - reservation.StartDate).Days;
 
+            var charge = charges[reservation.Id];
+            sheet.Cell(row, 9).Value = charge.Detail;
+            if (charge.Total is { } total)
+                sheet.Cell(row, 10).Value = total;
+
             row++;
         }
 
@@ -61,5 +68,42 @@ public class ReservationExportService
         workbook.SaveAs(filePath);
 
         return reservations.Count;
+    }
+
+    private record Charge(string Detail, int? Total);
+
+    // 料金は籠ごとに計算する。同じ籠に同じ期間で同室している鳥は、まとめて1件分だけ請求する。
+    private static Dictionary<int, Charge> BuildCharges(List<Reservation> reservations, Dictionary<int, Bird> birdsById)
+    {
+        var charges = new Dictionary<int, Charge>();
+
+        var groups = reservations.GroupBy(r => (r.CageId, r.StartDate, r.EndDate));
+        foreach (var group in groups)
+        {
+            var members = group.ToList();
+            var first = members[0];
+
+            if (first.IsIndefinite)
+            {
+                // 期間が決まっていないもの（経営者の鳥など）は料金を出さない
+                foreach (var member in members)
+                    charges[member.Id] = new Charge("無期限", null);
+                continue;
+            }
+
+            // 同室に中大型がいる場合は、大きい方の料金で計算する
+            var size = members.Any(m => birdsById.TryGetValue(m.BirdId, out var b) && b.Size == BirdSize.中大型)
+                ? BirdSize.中大型
+                : BirdSize.中小型;
+
+            var days = (first.EndDate!.Value - first.StartDate).Days;
+            var (total, detail) = PricingCalculator.Calculate(days, size);
+
+            charges[first.Id] = new Charge(detail, total);
+            foreach (var member in members.Skip(1))
+                charges[member.Id] = new Charge($"「{first.BirdName}」と同じ籠のため上の行に計上", 0);
+        }
+
+        return charges;
     }
 }
