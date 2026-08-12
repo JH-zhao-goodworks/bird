@@ -26,7 +26,7 @@ public class ReservationExportService
         using var workbook = new XLWorkbook();
         var sheet = workbook.AddWorksheet("予約一覧");
 
-        string[] headers = ["鳥名前", "種類", "飼い主", "ペア可否", "ペア名", "開始日", "終了日"];
+        string[] headers = ["鳥名前", "種類", "飼い主", "ペア可否", "ペア名", "開始日", "終了日", "日数"];
         for (var i = 0; i < headers.Length; i++)
         {
             var headerCell = sheet.Cell(1, i + 1);
@@ -47,6 +47,13 @@ public class ReservationExportService
             sheet.Cell(row, 5).Value = bird is not null && bird.CanPair && bird.PairName.Length > 0 ? bird.PairName : "X";
             sheet.Cell(row, 6).Value = reservation.StartDate.ToString("yyyy/MM/dd");
             sheet.Cell(row, 7).Value = reservation.IsIndefinite ? "無期限" : reservation.EndDate!.Value.ToString("yyyy/MM/dd");
+
+            // 日数は初日を含めない数え方（8/1〜8/3 なら 2）
+            if (reservation.IsIndefinite)
+                sheet.Cell(row, 8).Value = "無期限";
+            else
+                sheet.Cell(row, 8).Value = (reservation.EndDate!.Value - reservation.StartDate).Days;
+
             row++;
         }
 
